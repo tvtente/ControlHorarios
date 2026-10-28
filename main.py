@@ -46,7 +46,7 @@ class ControlHorariosApp:
         carpeta_datos.mkdir(parents=True, exist_ok=True)
 
         self.excel = ExcelManager(
-            carpeta_datos / "control_horarios_viajes.xlsx"
+            carpeta_datos / "control_horarios_viajes (1).xlsx"
         )
 
         self.ventana = tb.Window(themename="cosmo")
