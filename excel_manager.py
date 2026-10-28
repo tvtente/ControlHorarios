@@ -1,3 +1,4 @@
+from employee_status import validar_fichaje
 from pathlib import Path
 from datetime import datetime, time
 import re
@@ -25,7 +26,7 @@ class ExcelManager:
         self.filename = Path(filename)
         self.inicializar_excel()
 
-    # Create the workbook if needed and preserve existing records
+    # Crea el libro si no existe y conserva los registros anteriores.
     def inicializar_excel(self):
         if not self.filename.exists():
             workbook = Workbook()
@@ -40,7 +41,7 @@ class ExcelManager:
 
         try:
             if "Registros" not in workbook.sheetnames:
-                raise ValueError("The Excel file has no 'Registros' sheet.")
+                raise ValueError("El archivo de Excel no contiene la hoja «Registros».")
 
             sheet = workbook["Registros"]
 
@@ -49,7 +50,7 @@ class ExcelManager:
                 for col in range(1, sheet.max_column + 1)
             ]
 
-            # Add missing columns without deleting existing records
+            # Añade las columnas que falten sin borrar los registros.
             if not existing_headers or all(h is None for h in existing_headers):
                 sheet.append(self.HEADERS)
             else:
@@ -64,7 +65,7 @@ class ExcelManager:
         finally:
             workbook.close()
 
-    # Validate required fields and append a new record
+    # Valida los campos obligatorios y añade el fichaje.
     def guardar_registro(
         self,
         id_empleado,
@@ -76,28 +77,30 @@ class ExcelManager:
         hora_fin_prevista=""
     ):
         if not isinstance(id_empleado, str) or not id_empleado.strip():
-            raise ValueError("Employee ID is required.")
+            raise ValueError("Introduce el ID del empleado (por ejemplo, EMP-001).")
 
         if not isinstance(nombre_completo, str) or not nombre_completo.strip():
-            raise ValueError("Full name is required.")
+            raise ValueError("Introduce el nombre completo del empleado.")
 
         if not isinstance(departamento, str) or not departamento.strip():
-            raise ValueError("Department is required.")
+            raise ValueError("Selecciona el departamento del empleado.")
 
         if not isinstance(accion, str) or not accion.strip():
-            raise ValueError("Action is required.")
+            raise ValueError("Selecciona el tipo de registro.")
 
         if not isinstance(observaciones, str):
-            raise ValueError("Observations must be text.")
+            raise ValueError("Las observaciones deben ser un texto.")
 
         if not isinstance(hora_inicio_prevista, str):
-            raise ValueError("Planned start time must be text.")
+            raise ValueError("La hora de inicio prevista debe indicarse como texto en formato HH:MM.")
 
         if not isinstance(hora_fin_prevista, str):
-            raise ValueError("Planned end time must be text.")
+            raise ValueError("La hora de fin prevista debe indicarse como texto en formato HH:MM.")
 
-        # Generate an ID and capture the current date and time
+        # Genera el número de registro y captura la fecha y hora actuales.
         registros = self.consultar_registros()
+        ahora = datetime.now()
+        validar_fichaje(registros, id_empleado, accion, ahora=ahora)
         ids = [
             r["id_registro"]
             for r in registros
@@ -105,7 +108,6 @@ class ExcelManager:
             and not isinstance(r.get("id_registro"), bool)
         ]
         nuevo_id = max(ids, default=0) + 1
-        ahora = datetime.now()
 
         registro = {
             "id_registro": nuevo_id,
@@ -160,7 +162,7 @@ class ExcelManager:
 
         return registro
 
-    # Return all records, optionally filtered by employee, department, or action
+    # Consulta los registros con filtros opcionales de empleado, departamento y acción.
     def consultar_registros(
         self, empleado="", departamento="", accion=""
     ):

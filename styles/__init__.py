@@ -4,7 +4,7 @@ from tkinter import TclError, font as tkfont, ttk
 
 TEMA = "cosmo"
 
-# Prefer rounded, antialiased families so digits are not bitmap-pixelated.
+# Prioriza fuentes suavizadas para evitar cifras pixeladas.
 PREFERENCIA_FUENTE = (
     "Noto Sans",
     "DejaVu Sans",
@@ -63,13 +63,13 @@ def configurar_estilos(ventana):
 
     ventana.configure(bg=fondo)
 
-    # Main containers
+    # Contenedores principales.
     estilo.configure(
         "TFrame",
         background=fondo,
     )
 
-    # Standard labels
+    # Etiquetas generales.
     estilo.configure(
         "TLabel",
         background=fondo,
@@ -77,7 +77,7 @@ def configurar_estilos(ventana):
         font=tipo(10),
     )
 
-    # Main title style
+    # Estilo del título principal.
     estilo.configure(
         "Title.TLabel",
         background=fondo,
@@ -85,7 +85,7 @@ def configurar_estilos(ventana):
         font=tipo(17, "bold"),
     )
 
-    # Form sections
+    # Secciones del formulario.
     estilo.configure(
         "TLabelframe",
         background=blanco,
@@ -102,7 +102,7 @@ def configurar_estilos(ventana):
         font=tipo(10, "bold"),
     )
 
-    # Input fields: white background and darker border settings.
+    # Campos de entrada con fondo blanco y borde visible.
     estilo.configure(
         "TEntry",
         padding=8,
@@ -127,7 +127,7 @@ def configurar_estilos(ventana):
         relief="solid",
     )
 
-    # Standard buttons
+    # Botones generales.
     estilo.configure(
         "TButton",
         background=blanco,
@@ -150,7 +150,7 @@ def configurar_estilos(ventana):
         ],
     )
 
-    # Primary action button: stronger color, clear text, and more padding.
+    # Botón principal con color destacado y texto legible.
     estilo.configure(
         "Primary.TButton",
         background=azul,
@@ -176,7 +176,7 @@ def configurar_estilos(ventana):
         ],
     )
 
-    # Secondary action button: subtle background and matching spacing.
+    # Botón secundario con fondo suave y espaciado uniforme.
     estilo.configure(
         "Secondary.TButton",
         background="#E2E8F0",
@@ -199,7 +199,7 @@ def configurar_estilos(ventana):
         ],
     )
 
-    # Registration screen cards (Fichaje / Registro)
+    # Tarjetas de la pantalla de fichaje y registro.
     estilo.configure("RegistroHeader.TFrame", background="#EAF3FF")
     estilo.configure(
         "RegistroIcon.TLabel",
@@ -385,7 +385,7 @@ def configurar_estilos(ventana):
         font=tipo(9, "bold"),
     )
 
-    # Tabs
+    # Pestañas.
     estilo.configure(
         "TNotebook",
         background=fondo,
@@ -412,7 +412,7 @@ def configurar_estilos(ventana):
         ],
     )
 
-    # Excel history table
+    # Tabla del histórico de Excel.
     estilo.configure(
         "Treeview",
         background=blanco,
@@ -506,13 +506,14 @@ def configurar_estilos_registro(ventana):
         estilo.configure(nombre, padding=(10, 9), fieldbackground="#FFFFFF",
                          foreground=texto, bordercolor=borde, lightcolor=borde,
                          darkcolor=borde, borderwidth=1, arrowsize=16, font=tipo(11))
-        estilo.map(nombre, bordercolor=[("focus", azul)],
+        estilo.map(nombre, bordercolor=[("invalid", "#D3323C"), ("focus", azul)],
                    fieldbackground=[("readonly", "#F5F7FA")],
                    foreground=[("readonly", texto)])
     estilo.configure("RegistroAccion.TCombobox", padding=(12, 10),
                      foreground="#183C18", fieldbackground="#EFF9E5",
                      bordercolor="#CCE7B6", arrowsize=16, font=tipo(11))
     estilo.map("RegistroAccion.TCombobox",
+               bordercolor=[("invalid", "#D3323C"), ("focus", azul)],
                fieldbackground=[("readonly", "#EFF9E5")],
                foreground=[("readonly", "#183C18")],
                selectbackground=[("readonly", "#EFF9E5")],

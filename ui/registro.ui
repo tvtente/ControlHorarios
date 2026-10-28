@@ -348,7 +348,7 @@
             <child>
               <object class="ttk.Label" id="etiqueta_departamento" named="True">
                 <property name="style">RegistroField.TLabel</property>
-                <property name="text" translatable="yes">Departamento</property>
+                <property name="text" translatable="yes">Departamento *</property>
                 <layout manager="grid">
                   <property name="column">0</property>
                   <property name="pady">0 4</property>
@@ -466,7 +466,7 @@
             <child>
               <object class="ttk.Label" id="etiqueta_accion" named="True">
                 <property name="style">RegistroField.TLabel</property>
-                <property name="text" translatable="yes">Tipo de registro</property>
+                <property name="text" translatable="yes">Tipo de registro *</property>
                 <layout manager="grid">
                   <property name="column">0</property>
                   <property name="pady">0 4</property>
@@ -556,7 +556,7 @@
             <child>
               <object class="ttk.Label" id="etiqueta_inicio_previsto" named="True">
                 <property name="style">RegistroField.TLabel</property>
-                <property name="text" translatable="yes">Inicio previsto (HH:MM)</property>
+                <property name="text" translatable="yes">Inicio previsto (HH:MM) *</property>
                 <layout manager="grid">
                   <property name="column">0</property>
                   <property name="padx">0 8</property>
@@ -569,7 +569,7 @@
             <child>
               <object class="ttk.Label" id="etiqueta_fin_previsto" named="True">
                 <property name="style">RegistroField.TLabel</property>
-                <property name="text" translatable="yes">Fin previsto (HH:MM)</property>
+                <property name="text" translatable="yes">Fin previsto (HH:MM) *</property>
                 <layout manager="grid">
                   <property name="column">1</property>
                   <property name="padx">8 0</property>

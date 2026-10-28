@@ -69,3 +69,37 @@ def estado_empleado(registros, empleado, *, ahora=None):
             resultado.update(texto='En jornada', color='#079447')
         break
     return resultado
+
+
+def validar_fichaje(registros, empleado, accion, *, ahora=None):
+    """Impide movimientos que no correspondan con el estado actual del empleado."""
+    aliases = {'entrada': 'Entrada a Turno', 'salida': 'Salida de Turno'}
+    accion = aliases.get(accion.strip().casefold(), accion.strip())
+    estado = estado_empleado(registros, empleado, ahora=ahora)['texto']
+    if accion == 'Entrada a Turno':
+        if estado in ('En jornada', 'En descanso'):
+            raise ValueError('El empleado ya tiene una jornada abierta. Registra la salida antes de otra entrada.')
+    elif accion == 'Inicio de Descanso':
+        if estado != 'En jornada':
+            raise ValueError('Solo se puede iniciar un descanso con una jornada abierta y sin otro descanso activo.')
+    elif accion == 'Fin de Descanso':
+        if estado != 'En descanso':
+            raise ValueError('El empleado no tiene un descanso abierto que finalizar.')
+    elif accion == 'Salida de Turno':
+        if estado == 'En descanso':
+            raise ValueError('Finaliza el descanso antes de registrar la salida de turno.')
+        if estado != 'En jornada':
+            raise ValueError('No se puede registrar una salida sin una entrada de turno previa.')
+    else:
+        raise ValueError('Selecciona un tipo de registro válido.')
+
+
+def clave_orden_fichaje(registro):
+    """Orden cronológico compatible con fechas y horas de texto o de Excel."""
+    fecha = _fecha(registro.get('fecha')) or date.min
+    hora = _hora(registro.get('hora')) or time.min
+    try:
+        identificador = int(registro.get('id_registro') or 0)
+    except (TypeError, ValueError):
+        identificador = 0
+    return datetime.combine(fecha, hora), identificador

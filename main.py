@@ -10,8 +10,19 @@ import ttkbootstrap as tb
 
 from dashboard import build_dashboard_data, dibujar_departamentos, dibujar_fichajes_por_dia
 from excel_manager import ExcelManager
-from employee_status import estado_empleado
+from employee_status import estado_empleado, clave_orden_fichaje
 from styles import TEMA, aplicar_estilos_widgets, configurar_estilos, configurar_estilos_panel
+
+
+def texto_error(error):
+    """Presenta en español los problemas habituales de acceso al archivo."""
+    if isinstance(error, PermissionError):
+        return "No se puede acceder al Excel. Ciérralo si está abierto y comprueba los permisos del archivo."
+    if isinstance(error, FileNotFoundError):
+        return "No se encuentra el archivo de fichajes. Comprueba que exista en la carpeta data."
+    if isinstance(error, OSError):
+        return "No se ha podido acceder al archivo de fichajes. Comprueba su ubicación y los permisos."
+    return str(error)
 
 
 UI_DIR = Path(__file__).resolve().parent / "ui"
@@ -83,7 +94,7 @@ class ControlHorariosApp:
         aplicar_estilos_widgets(self.ventana, self.builder)
         self._configurar_registro()
 
-        # Load departments from Excel.
+        # Carga los departamentos desde Excel.
         departamentos = self.excel.consultar_departamentos()
 
         if departamentos:
@@ -91,7 +102,7 @@ class ControlHorariosApp:
                 values=departamentos
             )
 
-        # Copy department and action options into the history filters.
+        # Copia las opciones de departamento y acción a los filtros del histórico.
         for origen, destino in (
             ("departamento", "filtro_departamento"),
             ("accion", "filtro_accion"),
@@ -106,8 +117,31 @@ class ControlHorariosApp:
         self.builder.get_object("pie_archivo").configure(
             text=f"Archivo: data/{self.excel.filename.name}"
         )
+        self.builder.get_object("pestanas").bind(
+            "<<NotebookTabChanged>>", self._al_cambiar_pestana
+        )
 
-    # Methods connected to the graphical interface
+    # Acciones de la interfaz gráfica.
+
+    def _al_cambiar_pestana(self, evento):
+        """Recarga la vista seleccionada con los datos actuales del Excel."""
+        pestanas = self.builder.get_object("pestanas")
+        if evento.widget != pestanas:
+            return
+        indice = pestanas.index(pestanas.select())
+        if indice == 0:
+            try:
+                departamentos = self.excel.consultar_departamentos()
+            except (ValueError, OSError) as error:
+                messagebox.showerror("Departamentos", texto_error(error), parent=self.ventana)
+                return
+            for campo in ("departamento", "filtro_departamento"):
+                self.builder.get_object(campo).configure(values=departamentos)
+            self._actualizar_estado_empleado(completar=False)
+        elif indice == 1:
+            self.actualizar_panel()
+        elif indice == 2:
+            self.consultar_registros()
 
     def run(self):
         """Inicia el bucle de eventos de la ventana."""
@@ -127,6 +161,9 @@ class ControlHorariosApp:
         self.builder.get_object("accion").set("Entrada a Turno")
         self._restablecer_horas()
         self._actualizar_badge_accion()
+        for nombre in ("id_empleado", "nombre_completo", "departamento", "accion",
+                       "hora_inicio_prevista", "hora_fin_prevista"):
+            self.builder.get_object(nombre).state(["!invalid"])
         self._empleado_autocompletado = ""
         self._mostrar_estado_empleado({"texto": "Sin fichaje", "color": "#94A3B8"})
         self.builder.get_object("id_empleado").focus_set()
@@ -180,7 +217,7 @@ class ControlHorariosApp:
         try:
             registros = self.excel.consultar_registros()
         except (ValueError, OSError) as error:
-            messagebox.showerror("Panel de Control", str(error), parent=self.ventana)
+            messagebox.showerror("Panel de Control", texto_error(error), parent=self.ventana)
             return
         periodo = self.builder.get_object("periodo_grafico").get()
         dias = {"Últimos 7 días": 7, "Últimos 14 días": 14,
@@ -209,7 +246,7 @@ class ControlHorariosApp:
             self._datos_panel["departamentos"],
         )
 
-    # Methods connecting the interface to Excel
+    # Conexión de la interfaz con Excel.
 
     def _configurar_registro(self):
         """Conecta el badge visual del tipo de registro sin alterar el guardado."""
@@ -261,7 +298,7 @@ class ControlHorariosApp:
             registros = self.excel.consultar_registros() if empleado else []
         except (ValueError, OSError) as error:
             self._mostrar_estado_empleado({"texto": "No disponible", "color": "#D3323C"}, empleado)
-            messagebox.showerror("Estado del empleado", str(error), parent=self.ventana)
+            messagebox.showerror("Estado del empleado", texto_error(error), parent=self.ventana)
             return
         estado = estado_empleado(registros, empleado)
         self._mostrar_estado_empleado(estado, empleado)
@@ -291,7 +328,7 @@ class ControlHorariosApp:
                 self.builder.get_object("departamento").get()
             )
         except (ValueError, OSError) as error:
-            messagebox.showerror("Horario del departamento", str(error), parent=self.ventana)
+            messagebox.showerror("Horario del departamento", texto_error(error), parent=self.ventana)
             return
         for campo, valor in horario.items():
             self.builder.get_object(campo).set(valor)
@@ -328,6 +365,7 @@ class ControlHorariosApp:
     def _leer_hora(self, campo):
         valor = self.builder.get_object(campo).get()
         if len(valor) != 5 or not self._validar_edicion_hora(valor):
+            self._marcar_campo_invalido(campo)
             etiqueta = "inicio" if campo == "hora_inicio_prevista" else "fin"
             raise ValueError(f"Introduce la hora de {etiqueta} en formato HH:MM (00:00–23:59).")
         return valor
@@ -366,6 +404,26 @@ class ControlHorariosApp:
             style=f"{prefijo}Sub.TLabel", text=subtitulo
         )
 
+    def _marcar_campo_invalido(self, nombre):
+        campo = self.builder.get_object(nombre)
+        campo.state(["invalid"])
+        campo.focus_set()
+
+    def _validar_campos_obligatorios(self):
+        """Indica el primer campo pendiente antes de comprobar el horario."""
+        campos = (
+            ("id_empleado", "Introduce el ID del empleado (por ejemplo, EMP-001)."),
+            ("nombre_completo", "Introduce el nombre completo del empleado."),
+            ("departamento", "Selecciona el departamento del empleado."),
+            ("accion", "Selecciona el tipo de registro."),
+        )
+        for nombre in (*[c[0] for c in campos], "hora_inicio_prevista", "hora_fin_prevista"):
+            self.builder.get_object(nombre).state(["!invalid"])
+        for nombre, mensaje in campos:
+            if not self.builder.get_object(nombre).get().strip():
+                self._marcar_campo_invalido(nombre)
+                raise ValueError(mensaje)
+
     def guardar_registro(self):
         """Recoge los campos y guarda el registro en Excel."""
 
@@ -380,6 +438,7 @@ class ControlHorariosApp:
         )
 
         try:
+            self._validar_campos_obligatorios()
             datos = {
                 nombre: (self._leer_hora(nombre)
                          if nombre in ("hora_inicio_prevista", "hora_fin_prevista")
@@ -392,7 +451,7 @@ class ControlHorariosApp:
         except (ValueError, OSError) as error:
             messagebox.showerror(
                 "No se pudo guardar",
-                str(error),
+                texto_error(error),
                 parent=self.ventana,
             )
             return
@@ -418,13 +477,13 @@ class ControlHorariosApp:
         except (ValueError, OSError) as error:
             messagebox.showerror(
                 "No se pudo consultar",
-                str(error),
+                texto_error(error),
                 parent=self.ventana,
             )
             return
 
         # Los últimos fichajes aparecen primero. Los filtros reinician la página.
-        self._registros_historico = list(reversed(registros))
+        self._registros_historico = sorted(registros, key=clave_orden_fichaje, reverse=True)
         self._pagina_historico = 0
         self._mostrar_pagina_historico()
 
