@@ -178,3 +178,44 @@ class ExcelManager:
 
         finally:
             workbook.close()
+
+    def consultar_departamentos(self):
+        """Devuelve los departamentos de la hoja Departamentos de Excel."""
+        workbook = load_workbook(self.filename, read_only=True)
+
+        try:
+            if "Departamentos" not in workbook.sheetnames:
+                return []
+
+            sheet = workbook["Departamentos"]
+            rows = sheet.iter_rows(values_only=True)
+            headers = next(rows, None)
+
+            if not headers:
+                return []
+
+            columna = next(
+                (
+                    indice
+                    for indice, encabezado in enumerate(headers)
+                    if str(encabezado or "").strip().lower() == "departamento"
+                ),
+                None,
+            )
+
+            if columna is None:
+                return []
+
+            departamentos = []
+
+            for fila in rows:
+                if columna < len(fila):
+                    valor = fila[columna]
+
+                    if valor is not None and str(valor).strip():
+                        departamentos.append(str(valor).strip())
+
+            return list(dict.fromkeys(departamentos))
+
+        finally:
+            workbook.close()

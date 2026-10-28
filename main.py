@@ -76,6 +76,14 @@ class ControlHorariosApp:
         self.builder.connect_callbacks(self)
         aplicar_estilos_widgets(self.ventana, self.builder)
 
+        # Load departments from Excel.
+        departamentos = self.excel.consultar_departamentos()
+
+        if departamentos:
+            self.builder.get_object("departamento").configure(
+                values=departamentos
+            )
+
         # Copy department and action options into the history filters.
         for origen, destino in (
             ("departamento", "filtro_departamento"),
