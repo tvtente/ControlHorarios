@@ -85,6 +85,14 @@ class ControlHorariosApp:
         if boton_limpiar is not None:
             boton_limpiar.configure(style="Secondary.TButton")
 
+        # Load departments from Excel.
+        departamentos = self.excel.consultar_departamentos()
+
+        if departamentos:
+            self.builder.get_object("departamento").configure(
+                values=departamentos
+            )
+
         # Copy department and action options into the history filters.
         for origen, destino in (
             ("departamento", "filtro_departamento"),
