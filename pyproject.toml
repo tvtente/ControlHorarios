@@ -6,4 +6,5 @@ requires-python = ">=3.10"
 dependencies = [
     "openpyxl>=3.1.5",
     "pygubu-designer",
+    "ttkbootstrap>=2.2.6",
 ]

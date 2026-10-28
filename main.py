@@ -1,11 +1,14 @@
 """Conecta la interfaz de Pygubu con el gestor de Excel."""
 
 from pathlib import Path
+from datetime import datetime
 import tkinter as tk
 from tkinter import messagebox, ttk
 
 import pygubu
+import ttkbootstrap as tb
 
+from dashboard import build_dashboard_data, dibujar_departamentos, dibujar_fichajes_por_dia
 from excel_manager import ExcelManager
 
 
@@ -23,10 +26,10 @@ class ControlHorariosApp:
             carpeta_datos / "control_horarios_viajes.xlsx"
         )
 
-        self.ventana = tk.Tk()
+        self.ventana = tb.Window(themename="cosmo")
         self.ventana.title("Control de horarios")
-        self.ventana.geometry("1100x750")
-        self.ventana.minsize(900, 600)
+        self.ventana.geometry("1280x800")
+        self.ventana.minsize(1000, 650)
 
         self.configurar_estilos()
 
@@ -57,13 +60,22 @@ class ControlHorariosApp:
                 values=self.builder.get_object(origen).cget("values")
             )
 
+        self._datos_panel = None
+        self.builder.get_object("periodo_grafico").set("Últimos 7 días")
+        self.builder.get_object("periodo_grafico").bind(
+            "<<ComboboxSelected>>", self.actualizar_panel
+        )
+        for ident in ("grafico_dias", "grafico_departamentos"):
+            self.builder.get_object(ident).bind("<Configure>", self._dibujar_graficos)
+
         self.consultar_registros()
+        self.actualizar_panel()
+        self._actualizar_reloj()
 
     def configurar_estilos(self):
         """Aplica un diseño visual moderno y uniforme."""
 
         estilo = ttk.Style(self.ventana)
-        estilo.theme_use("clam")
 
         fondo = "#F1F5F9"
         blanco = "#FFFFFF"
@@ -228,14 +240,50 @@ class ControlHorariosApp:
         estilo.map(
             "TNotebook.Tab",
             background=[
-                ("selected", blanco),
+                ("selected", azul),
                 ("active", "#DBEAFE"),
             ],
             foreground=[
-                ("selected", azul),
+                ("selected", blanco),
                 ("active", texto),
             ],
         )
+
+        # Panel de control: cabecera, tarjetas y gráficos.
+        estilo.configure("PanelHeader.TFrame", background="#EAF3FF")
+        estilo.configure("PanelIcon.TLabel", background="#EAF3FF",
+                         foreground=azul, font=("Segoe UI", 30, "bold"))
+        estilo.configure("PanelTitle.TLabel", background="#EAF3FF",
+                         foreground="#0B1F55", font=("Segoe UI", 23, "bold"))
+        estilo.configure("PanelSubtitle.TLabel", background="#EAF3FF",
+                         foreground="#4C5F7E", font=("Segoe UI", 11))
+        estilo.configure("PanelClock.TFrame", background="#DDEBFC")
+        estilo.configure("ClockDate.TLabel", background="#DDEBFC",
+                         foreground="#0B1F55", font=("Segoe UI", 10, "bold"))
+        estilo.configure("ClockTime.TLabel", background="#DDEBFC",
+                         foreground="#0B1F55", font=("Segoe UI", 17, "bold"))
+        fondos = ("#E9F2FF", "#E7F8EE", "#FFF0F0", "#FFF5DC")
+        acentos = ("#1264DC", "#079447", "#D3323C", "#B97800")
+        for indice, (color_fondo, color_acento) in enumerate(zip(fondos, acentos)):
+            estilo.configure(f"Card{indice}.TFrame", background=color_fondo)
+            estilo.configure(f"CardIcon{indice}.TLabel", background=color_fondo,
+                             foreground=color_acento, font=("Segoe UI", 25, "bold"))
+            estilo.configure(f"CardTitle{indice}.TLabel", background=color_fondo,
+                             foreground="#10234E", font=("Segoe UI", 11, "bold"))
+            estilo.configure(f"CardValue{indice}.TLabel", background=color_fondo,
+                             foreground=color_acento, font=("Segoe UI", 27, "bold"))
+            estilo.configure(f"CardSubtitle{indice}.TLabel", background=color_fondo,
+                             foreground="#405674", font=("Segoe UI", 9))
+        estilo.configure("Chart.TFrame", background=blanco)
+        estilo.configure("ChartTitle.TLabel", background=blanco,
+                         foreground="#0B1F55", font=("Segoe UI", 14, "bold"))
+        estilo.configure("ChartSubtitle.TLabel", background=blanco,
+                         foreground="#526687", font=("Segoe UI", 10))
+        estilo.configure("PanelNotice.TLabel", background="#E8F2FF",
+                         foreground="#1657AC", font=("Segoe UI", 10), padding=10)
+        estilo.configure("PanelFooter.TFrame", background="#E9EFF7")
+        estilo.configure("PanelFooter.TLabel", background="#E9EFF7",
+                         foreground="#243456", font=("Segoe UI", 9))
 
         # Excel history table
         estilo.configure(
@@ -340,6 +388,48 @@ class ControlHorariosApp:
         """Recarga la tabla del histórico utilizando los filtros actuales."""
         self.consultar_registros()
 
+    def _actualizar_reloj(self):
+        """Muestra fecha y hora locales sin volver a leer el Excel."""
+        ahora = datetime.now()
+        dias = ("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
+        meses = ("enero", "febrero", "marzo", "abril", "mayo", "junio",
+                 "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre")
+        fecha = f"{dias[ahora.weekday()].capitalize()}, {ahora.day} de {meses[ahora.month - 1]} de {ahora.year}"
+        self.builder.get_object("fecha_panel").configure(text=fecha)
+        self.builder.get_object("hora_panel").configure(text=ahora.strftime("%H:%M:%S"))
+        self.ventana.after(1000, self._actualizar_reloj)
+
+    def actualizar_panel(self, _evento=None):
+        """Calcula indicadores y gráficos desde todos los registros del libro."""
+        try:
+            registros = self.excel.consultar_registros()
+        except (ValueError, OSError) as error:
+            messagebox.showerror("Panel de Control", str(error), parent=self.ventana)
+            return
+        periodo = self.builder.get_object("periodo_grafico").get()
+        dias = {"Últimos 7 días": 7, "Últimos 14 días": 14,
+                "Últimos 30 días": 30}.get(periodo, 7)
+        self._datos_panel = build_dashboard_data(registros, dias=dias)
+        for campo in ("fichajes_hoy", "entradas_hoy", "salidas_hoy", "jornadas_abiertas"):
+            self.builder.get_object(f"valor_{campo}").configure(
+                text=str(self._datos_panel[campo])
+            )
+        self.builder.get_object("actualizado_panel").configure(
+            text="Datos actualizados: " + datetime.now().strftime("%d/%m/%Y %H:%M")
+        )
+        self._dibujar_graficos()
+
+    def _dibujar_graficos(self, _evento=None):
+        if self._datos_panel is None:
+            return
+        dibujar_fichajes_por_dia(
+            self.builder.get_object("grafico_dias"), self._datos_panel["dias"]
+        )
+        dibujar_departamentos(
+            self.builder.get_object("grafico_departamentos"),
+            self._datos_panel["departamentos"],
+        )
+
     # Methods connecting the interface to Excel
 
     def guardar_registro(self):
@@ -377,6 +467,7 @@ class ControlHorariosApp:
         )
 
         self.actualizar_historico()
+        self.actualizar_panel()
 
     def consultar_registros(self):
         """Consulta Excel y actualiza la tabla con los filtros actuales."""
