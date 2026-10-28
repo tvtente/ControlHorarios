@@ -99,7 +99,7 @@ def generar():
                         "hora_fin_prevista": "17:00",
                     }
                     hoja.append([registro.get(nombre) for nombre in encabezados])
-                    existentes.add(clave)
+                    existentes[clave] = hoja.max_row
                     siguiente_id += 1
                     nuevos += 1
 

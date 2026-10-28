@@ -4,6 +4,8 @@ from collections import Counter
 from datetime import date, datetime, timedelta
 from math import ceil
 
+from styles import tipo
+
 
 ENTRADA = "Entrada a Turno"
 SALIDA = "Salida de Turno"
@@ -84,21 +86,21 @@ def dibujar_fichajes_por_dia(canvas, filas):
 
     canvas.create_rectangle(izquierda + 2, 11, izquierda + 13, 22, fill="#20A45B", outline="")
     canvas.create_text(izquierda + 19, 16, text="Entradas", anchor="w", fill=color_texto,
-                       font=("Segoe UI", 9))
+                       font=tipo(9))
     canvas.create_rectangle(izquierda + 106, 11, izquierda + 117, 22, fill="#E3454D", outline="")
     canvas.create_text(izquierda + 123, 16, text="Salidas", anchor="w", fill=color_texto,
-                       font=("Segoe UI", 9))
+                       font=tipo(9))
 
     for paso in range(5):
         valor = escala * paso // 4
         y = base - area * paso / 4
         canvas.create_line(izquierda, y, ancho - derecha, y, fill=color_grid)
         canvas.create_text(izquierda - 7, y, text=str(valor), anchor="e", fill=color_texto,
-                           font=("Segoe UI", 9))
+                           font=tipo(9))
 
     if maximo == 0:
         canvas.create_text(ancho / 2, (arriba + base) / 2, text="Sin fichajes en este período",
-                           fill="#62748A", font=("Segoe UI", 11))
+                           fill="#62748A", font=tipo(11))
         return
 
     espacio = max(1, (ancho - izquierda - derecha) / len(filas))
@@ -115,10 +117,10 @@ def dibujar_fichajes_por_dia(canvas, filas):
             canvas.create_rectangle(x1, y1, x1 + barra, base, fill=color, outline="")
             if valor and len(filas) <= 14 and espacio >= 25:
                 canvas.create_text(x1 + barra / 2, y1 - 7, text=str(valor),
-                                   fill=color_texto, font=("Segoe UI", 8))
+                                   fill=color_texto, font=tipo(8))
         if indice % mostrar_cada == 0 or indice == len(filas) - 1:
             canvas.create_text(centro, base + 15, text=dia.strftime("%d/%m"),
-                               fill=color_texto, font=("Segoe UI", 8))
+                               fill=color_texto, font=tipo(8))
 
 
 def dibujar_departamentos(canvas, filas):
@@ -129,7 +131,7 @@ def dibujar_departamentos(canvas, filas):
         return
     if not filas:
         canvas.create_text(ancho / 2, alto / 2, text="Sin fichajes por departamento",
-                           fill="#62748A", font=("Segoe UI", 11))
+                           fill="#62748A", font=tipo(11))
         return
     visibles = list(filas[:6])
     if len(filas) > 6:
@@ -141,9 +143,9 @@ def dibujar_departamentos(canvas, filas):
         y = 22 + espacio * (indice + 0.5)
         etiqueta = nombre if len(nombre) <= 20 else nombre[:18] + "…"
         canvas.create_text(izquierda - 12, y, text=etiqueta, anchor="e", fill="#243456",
-                           font=("Segoe UI", 9))
+                           font=tipo(9))
         largo = max(2, (ancho - izquierda - derecha) * valor / maximo)
         canvas.create_rectangle(izquierda, y - 10, izquierda + largo, y + 10,
                                 fill="#2D7CF2", outline="")
         canvas.create_text(izquierda + largo + 7, y, text=str(valor), anchor="w",
-                           fill="#243456", font=("Segoe UI", 9, "bold"))
+                           fill="#243456", font=tipo(9, "bold"))
