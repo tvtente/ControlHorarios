@@ -1,0 +1,71 @@
+# Control de horarios
+
+## Why we use uv
+
+`uv` manages Python dependencies and virtual environments. It creates a separate `.venv` for this project, keeping its packages isolated from other projects.
+
+It helps us work together because:
+
+- `pyproject.toml` declares the project dependencies.
+- `uv.lock` records the resolved package versions, making installations reproducible across our computers.
+- `uv sync` creates or updates the environment automatically.
+- `uv run` runs a command in the project environment without manual activation.
+
+This gives us a shared setup for Pygubu Designer and openpyxl.
+
+### Sharing the project
+
+Share the project files, including `pyproject.toml`, `uv.lock`, and the `ui` folder. Leave out `.venv`: virtual environments contain machine-specific paths and should be recreated on the receiving computer.
+
+Install uv using the [official installation instructions](https://docs.astral.sh/uv/getting-started/installation/), then open a terminal in the project folder and run the commands below. `uv sync` recreates the environment from the shared configuration.
+
+`openpyxl` is already included in the project dependencies.
+
+Reference: [uv project documentation](https://docs.astral.sh/uv/guides/projects/).
+
+## Open the UI designer
+
+```bash
+uv sync
+uv run pygubu-designer ui/control_horarios.ui
+```
+
+## Run the application
+
+`main.py` is ready. It loads `ui/control_horarios.ui` using Pygubu and opens the desktop window.
+
+```bash
+uv run python main.py
+```
+
+Share `main.py`, `ui/`, `pyproject.toml`, and `uv.lock`; exclude `.venv`. After installing uv, your teammate can run the same command to create the environment and open the application. Python must support Tkinter.
+
+The registration form and history table are connected to Excel through `ExcelManager` and Pygubu callbacks.
+
+### Regenerate with Pygubu Designer (optional)
+
+In **Project Settings**, select **Application that uses UI file**, main widget `app`, and a different module name (for example, `generated_app`). Choose the project root as output directory, enable **Regenerate code when saving the project**, and save. The generator produces a launcher and a companion UI module; keep both files.
+
+## Excel connection
+
+`main.py` uses `ExcelManager` from `excel_manager.py`. The application automatically creates the `data/` folder and stores the workbook at `data/control_horarios_viajes.xlsx`. The location is relative to `main.py`, regardless of the terminal working directory.
+
+- **Registrar fichaje** saves the form values, clears the form after success, and refreshes the history.
+- **Aplicar filtros** searches by employee, department, and action.
+- **Limpiar filtros** shows all saved records.
+- **Actualizar histórico** reloads records using the current filters.
+- **Limpiar** clears only the registration form.
+
+These buttons are connected through Pygubu `command` callbacks. Refreshing the table never deletes records from Excel. The dashboard calculations are not implemented yet.
+
+## Integrated work from old
+
+The Excel manager from `old/` is identical to the root version and is already connected to the GUI. Its workbook (three existing records) was copied to `data/control_horarios_viajes.xlsx`. The original files remain in `old/`.
+
+The console program is also available and uses the same workbook as the GUI:
+
+```bash
+uv run python consola.py
+```
+
+Run the GUI with `uv run python main.py`. Use one application at a time when saving to the shared workbook.

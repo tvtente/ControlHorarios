@@ -1,0 +1,9 @@
+[project]
+name = "control-entrada"
+version = "0.1.0"
+description = "Interfaz gráfica de control de horarios"
+requires-python = ">=3.10"
+dependencies = [
+    "openpyxl>=3.1.5",
+    "pygubu-designer",
+]
