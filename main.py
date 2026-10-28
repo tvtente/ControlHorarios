@@ -73,6 +73,18 @@ class ControlHorariosApp:
         self.builder = ConstructoresPygubu(constructores)
 
         self.builder.connect_callbacks(self)
+        # Connect the history table to its scrollbars.
+        tabla = self.builder.get_object("tabla_fichajes")
+        scroll_vertical = self.builder.get_object("scroll_vertical")
+        scroll_horizontal = self.builder.get_object("scroll_horizontal")
+
+        tabla.configure(
+            yscrollcommand=scroll_vertical.set,
+            xscrollcommand=scroll_horizontal.set,
+        )
+
+        scroll_vertical.configure(command=tabla.yview)
+        scroll_horizontal.configure(command=tabla.xview)
         self.aplicar_estilos_widgets()
 
         # Apply the primary style to the registration button.
@@ -344,6 +356,43 @@ class ControlHorariosApp:
             font=("Segoe UI", 10, "bold"),
             padding=(8, 10),
         )
+        
+        # Modern scrollbars for the Excel history table
+        estilo.configure(
+            "Vertical.TScrollbar",
+            background="#CBD5E1",
+            troughcolor="#F1F5F9",
+            bordercolor="#F1F5F9",
+            arrowcolor="#475569",
+            relief="flat",
+            width=12,
+        )
+
+        estilo.map(
+            "Vertical.TScrollbar",
+            background=[
+                ("active", "#2563EB"),
+                ("pressed", "#1D4ED8"),
+            ],
+        )
+
+        estilo.configure(
+            "Horizontal.TScrollbar",
+            background="#CBD5E1",
+            troughcolor="#F1F5F9",
+            bordercolor="#F1F5F9",
+            arrowcolor="#475569",
+            relief="flat",
+            width=12,
+        )
+
+        estilo.map(
+            "Horizontal.TScrollbar",
+            background=[
+                ("active", "#2563EB"),
+                ("pressed", "#1D4ED8"),
+            ],
+        )
 
         estilo.map(
             "Treeview",
@@ -561,6 +610,11 @@ class ControlHorariosApp:
                     for columna in columnas
                 ],
             )
+
+        # Update the number of visible records.
+        self.builder.get_object("total_registros").configure(
+            text=f"{len(registros)} registros"
+        )
 
 
 if __name__ == "__main__":
