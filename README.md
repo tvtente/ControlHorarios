@@ -1,5 +1,7 @@
 # Control de horarios
 
+Desktop application built with ttkbootstrap (`cosmo` theme), a Pygubu UI file, and openpyxl.
+
 ## Why we use uv
 
 `uv` manages Python dependencies and virtual environments. It creates a separate `.venv` for this project, keeping its packages isolated from other projects.
@@ -11,7 +13,7 @@ It helps us work together because:
 - `uv sync` creates or updates the environment automatically.
 - `uv run` runs a command in the project environment without manual activation.
 
-This gives us a shared setup for Pygubu Designer and openpyxl.
+This gives us a shared setup for Pygubu Designer, ttkbootstrap, and openpyxl.
 
 ### Sharing the project
 
@@ -19,20 +21,30 @@ Share the project files, including `pyproject.toml`, `uv.lock`, and the `ui` fol
 
 Install uv using the [official installation instructions](https://docs.astral.sh/uv/getting-started/installation/), then open a terminal in the project folder and run the commands below. `uv sync` recreates the environment from the shared configuration.
 
-`openpyxl` is already included in the project dependencies.
+`openpyxl` and `ttkbootstrap` are included in the project dependencies.
 
 Reference: [uv project documentation](https://docs.astral.sh/uv/guides/projects/).
 
 ## Open the UI designer
 
+Each screen can be edited independently. `control_horarios.ui` contains only the notebook and its three empty containers; `main.py` loads the corresponding screen into each container at runtime.
+
 ```bash
 uv sync
+uv run pygubu-designer ui/registro.ui
+uv run pygubu-designer ui/panel.ui
+uv run pygubu-designer ui/historico.ui
+```
+
+To edit the common notebook and tab labels:
+
+```bash
 uv run pygubu-designer ui/control_horarios.ui
 ```
 
 ## Run the application
 
-`main.py` is ready. It loads `ui/control_horarios.ui` using Pygubu and opens the desktop window.
+`main.py` loads all four `.ui` files using Pygubu and opens the assembled desktop window.
 
 ```bash
 uv run python main.py
@@ -56,11 +68,11 @@ In **Project Settings**, select **Application that uses UI file**, main widget `
 - **Actualizar histórico** reloads records using the current filters.
 - **Limpiar** clears only the registration form.
 
-These buttons are connected through Pygubu `command` callbacks. Refreshing the table never deletes records from Excel. The dashboard calculations are not implemented yet.
+These buttons are connected through Pygubu `command` callbacks. Refreshing the table never deletes records from Excel.
 
-## Integrated work from old
+## Dashboard
 
-The Excel manager from `old/` is identical to the root version and is already connected to the GUI. Its workbook (three existing records) was copied to `data/control_horarios_viajes.xlsx`. The original files remain in `old/`.
+The dashboard now reads the same workbook: it shows today's records, shift starts and ends, and employees whose latest shift movement is an entry. Its charts compare entries and exits over the last 7, 14, or 30 days and show total records by department. The **Actualizar** button reloads the Excel data; a successful registration also refreshes the dashboard automatically.
 
 The console program is also available and uses the same workbook as the GUI:
 
