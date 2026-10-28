@@ -12,7 +12,30 @@ from dashboard import build_dashboard_data, dibujar_departamentos, dibujar_ficha
 from excel_manager import ExcelManager
 
 
-UI_FILE = Path(__file__).resolve().parent / "ui" / "control_horarios.ui"
+UI_DIR = Path(__file__).resolve().parent / "ui"
+UI_FILE = UI_DIR / "control_horarios.ui"
+
+
+class ConstructoresPygubu:
+    """Expone los widgets y callbacks de los cuatro archivos UI como un conjunto."""
+
+    def __init__(self, constructores):
+        self.constructores = constructores
+        self.por_nombre = {}
+        for constructor in constructores:
+            for nombre in constructor.objects:
+                if nombre in self.por_nombre:
+                    raise ValueError(f"ID de widget repetido entre archivos UI: {nombre}")
+                self.por_nombre[nombre] = constructor
+
+    def get_object(self, nombre):
+        if nombre not in self.por_nombre:
+            raise KeyError(f"No existe el widget de Pygubu: {nombre}")
+        return self.por_nombre[nombre].get_object(nombre)
+
+    def connect_callbacks(self, controlador):
+        for constructor in self.constructores:
+            constructor.connect_callbacks(controlador)
 
 
 class ControlHorariosApp:
@@ -33,10 +56,21 @@ class ControlHorariosApp:
 
         self.configurar_estilos()
 
-        self.builder = pygubu.Builder()
-        self.builder.add_from_file(str(UI_FILE))
-        self.interfaz = self.builder.get_object("app", self.ventana)
+        general = pygubu.Builder()
+        general.add_from_file(str(UI_FILE))
+        self.interfaz = general.get_object("app", self.ventana)
         self.interfaz.pack(fill="both", expand=True)
+
+        constructores = [general]
+        for nombre in ("registro", "panel", "historico"):
+            constructor = pygubu.Builder()
+            constructor.add_from_file(str(UI_DIR / f"{nombre}.ui"))
+            contenedor = general.get_object(f"contenedor_{nombre}")
+            pantalla = constructor.get_object(f"pantalla_{nombre}", contenedor)
+            pantalla.pack(fill="both", expand=True)
+            constructores.append(constructor)
+
+        self.builder = ConstructoresPygubu(constructores)
 
         self.builder.connect_callbacks(self)
         self.aplicar_estilos_widgets()

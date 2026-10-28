@@ -27,14 +27,24 @@ Reference: [uv project documentation](https://docs.astral.sh/uv/guides/projects/
 
 ## Open the UI designer
 
+Each screen can be edited independently. `control_horarios.ui` contains only the notebook and its three empty containers; `main.py` loads the corresponding screen into each container at runtime.
+
 ```bash
 uv sync
+uv run pygubu-designer ui/registro.ui
+uv run pygubu-designer ui/panel.ui
+uv run pygubu-designer ui/historico.ui
+```
+
+To edit the common notebook and tab labels:
+
+```bash
 uv run pygubu-designer ui/control_horarios.ui
 ```
 
 ## Run the application
 
-`main.py` is ready. It loads `ui/control_horarios.ui` using Pygubu and opens the desktop window.
+`main.py` loads all four `.ui` files using Pygubu and opens the assembled desktop window.
 
 ```bash
 uv run python main.py
