@@ -60,7 +60,7 @@ In **Project Settings**, select **Application that uses UI file**, main widget `
 
 ## Excel connection
 
-`main.py` uses `ExcelManager` from `excel_manager.py`. The application automatically creates the `data/` folder and stores the workbook at `data/control_horarios_viajes.xlsx`. The location is relative to `main.py`, regardless of the terminal working directory.
+`main.py` uses `ExcelManager` from `excel_manager.py`. The application automatically creates the `data/` folder and stores the workbook at `data/control_horarios.xlsx`. The location is relative to `main.py`, regardless of the terminal working directory.
 
 - **Registrar fichaje** saves the form values, clears the form after success, and refreshes the history.
 - **Aplicar filtros** searches by employee, department, and action.
@@ -81,3 +81,17 @@ uv run python consola.py
 ```
 
 Run the GUI with `uv run python main.py`. Use one application at a time when saving to the shared workbook.
+
+### Fuentes en Linux
+
+Si las letras aparecen pixeladas y Tk sustituye las fuentes por `fixed`,
+recrea el entorno con el Python del sistema, que debe tener Tkinter instalado:
+
+```bash
+uv sync --python /usr/bin/python3
+uv run python main.py
+```
+
+El formulario utiliza Noto Sans o DejaVu Sans cuando están disponibles.
+Al salir del campo ID de empleado (o pulsar Intro), consulta sus fichajes,
+completa nombre y departamento y muestra su estado junto al calendario.

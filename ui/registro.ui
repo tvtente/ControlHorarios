@@ -28,7 +28,7 @@
         <child>
           <object class="ttk.Label" id="icono_registro" named="True">
             <property name="style">RegistroIcon.TLabel</property>
-            <property name="text">👤</property>
+            <property name="text" />
             <layout manager="grid">
               <property name="column">0</property>
               <property name="padx">0 12</property>
@@ -36,6 +36,8 @@
               <property name="rowspan">2</property>
               <property name="sticky">w</property>
             </layout>
+            <property name="padding">10</property>
+            <property name="image">../images/control_horarios_64.png</property>
           </object>
         </child>
         <child>
@@ -63,7 +65,7 @@
         </child>
         <child>
           <object class="ttk.Frame" id="reloj_registro" named="True">
-            <property name="padding">10 12</property>
+            <property name="padding">12 10</property>
             <property name="style">RegistroClock.TFrame</property>
             <layout manager="grid">
               <property name="column">2</property>
@@ -78,13 +80,14 @@
             <child>
               <object class="ttk.Label" id="icono_reloj_registro" named="True">
                 <property name="style">RegistroClockIcon.TLabel</property>
-                <property name="text">📅</property>
+                <property name="text" />
                 <layout manager="grid">
                   <property name="column">0</property>
                   <property name="padx">0 10</property>
                   <property name="row">0</property>
                   <property name="rowspan">2</property>
                 </layout>
+                <property name="image">../images/calendario.png</property>
               </object>
             </child>
             <child>
@@ -96,6 +99,7 @@
                   <property name="row">0</property>
                   <property name="sticky">w</property>
                 </layout>
+                <property name="wraplength">270</property>
               </object>
             </child>
             <child>
@@ -113,7 +117,7 @@
         </child>
         <child>
           <object class="ttk.Frame" id="estado_actual_caja" named="True">
-            <property name="padding">10 14</property>
+            <property name="padding">14 12</property>
             <property name="style">RegistroStatus.TFrame</property>
             <layout manager="grid">
               <property name="column">3</property>
@@ -145,6 +149,7 @@
                   <property name="row">0</property>
                   <property name="sticky">w</property>
                 </layout>
+                <property name="wraplength">160</property>
               </object>
             </child>
             <child>
@@ -174,11 +179,13 @@
           <property type="column" id="0" name="weight">1</property>
           <property type="column" id="1" name="weight">1</property>
           <property type="row" id="0" name="weight">1</property>
+          <property type="column" id="0" name="uniform">registro_columnas</property>
+          <property type="column" id="1" name="uniform">registro_columnas</property>
         </containerlayout>
         <child>
           <object class="ttk.Frame" id="datos_empleado" named="True">
-            <property name="padding">18</property>
-            <property name="style">RegistroCard.TFrame</property>
+            <property name="padding">16</property>
+            <property name="style">RegistroPanel.TFrame</property>
             <layout manager="grid">
               <property name="column">0</property>
               <property name="padx">0 8</property>
@@ -193,7 +200,7 @@
                 <property name="style">RegistroCard.TFrame</property>
                 <layout manager="grid">
                   <property name="column">0</property>
-                  <property name="pady">0 14</property>
+                  <property name="pady">0 10</property>
                   <property name="row">0</property>
                   <property name="sticky">ew</property>
                 </layout>
@@ -203,13 +210,15 @@
                 <child>
                   <object class="ttk.Label" id="icono_empleado" named="True">
                     <property name="style">RegistroCardIcon.TLabel</property>
-                    <property name="text">👤</property>
+                    <property name="text" />
                     <layout manager="grid">
                       <property name="column">0</property>
                       <property name="padx">0 10</property>
                       <property name="row">0</property>
                       <property name="rowspan">2</property>
                     </layout>
+                    <property name="padding">10 8</property>
+                    <property name="image">../images/empleado.png</property>
                   </object>
                 </child>
                 <child>
@@ -251,10 +260,10 @@
             </child>
             <child>
               <object class="ttk.Frame" id="fila_id_empleado" named="True">
-                <property name="style">RegistroCard.TFrame</property>
+                <property name="style">RegistroInput.TFrame</property>
                 <layout manager="grid">
                   <property name="column">0</property>
-                  <property name="pady">0 12</property>
+                  <property name="pady">0 8</property>
                   <property name="row">2</property>
                   <property name="sticky">ew</property>
                 </layout>
@@ -263,13 +272,15 @@
                 </containerlayout>
                 <child>
                   <object class="ttk.Label" id="icono_id_empleado" named="True">
-                    <property name="style">RegistroFieldIcon.TLabel</property>
-                    <property name="text">🪪</property>
+                    <property name="style">RegistroInputIcon.TLabel</property>
+                    <property name="text" />
                     <layout manager="grid">
                       <property name="column">0</property>
-                      <property name="padx">0 8</property>
+                      <property name="padx">0</property>
                       <property name="row">0</property>
                     </layout>
+                    <property name="padding">10 7</property>
+                    <property name="image">../images/empleado_24.png</property>
                   </object>
                 </child>
                 <child>
@@ -280,6 +291,7 @@
                       <property name="row">0</property>
                       <property name="sticky">ew</property>
                     </layout>
+                    <property name="style">Registro.TEntry</property>
                   </object>
                 </child>
               </object>
@@ -311,12 +323,13 @@
                 <child>
                   <object class="ttk.Label" id="icono_nombre" named="True">
                     <property name="style">RegistroFieldIcon.TLabel</property>
-                    <property name="text">👤</property>
+                    <property name="text" />
                     <layout manager="grid">
                       <property name="column">0</property>
                       <property name="padx">0 8</property>
                       <property name="row">0</property>
                     </layout>
+                    <property name="image">../images/empleado_24.png</property>
                   </object>
                 </child>
                 <child>
@@ -327,6 +340,7 @@
                       <property name="row">0</property>
                       <property name="sticky">ew</property>
                     </layout>
+                    <property name="style">Registro.TEntry</property>
                   </object>
                 </child>
               </object>
@@ -345,7 +359,7 @@
             </child>
             <child>
               <object class="ttk.Frame" id="fila_departamento" named="True">
-                <property name="style">RegistroCard.TFrame</property>
+                <property name="style">RegistroInput.TFrame</property>
                 <layout manager="grid">
                   <property name="column">0</property>
                   <property name="row">6</property>
@@ -356,13 +370,14 @@
                 </containerlayout>
                 <child>
                   <object class="ttk.Label" id="icono_departamento" named="True">
-                    <property name="style">RegistroFieldIcon.TLabel</property>
+                    <property name="style">RegistroInputIcon.TLabel</property>
                     <property name="text">🏢</property>
                     <layout manager="grid">
                       <property name="column">0</property>
-                      <property name="padx">0 8</property>
+                      <property name="padx">0</property>
                       <property name="row">0</property>
                     </layout>
+                    <property name="padding">10 7</property>
                   </object>
                 </child>
                 <child>
@@ -375,6 +390,7 @@
                       <property name="row">0</property>
                       <property name="sticky">ew</property>
                     </layout>
+                    <property name="style">Registro.TCombobox</property>
                   </object>
                 </child>
               </object>
@@ -383,8 +399,8 @@
         </child>
         <child>
           <object class="ttk.Frame" id="datos_jornada" named="True">
-            <property name="padding">18</property>
-            <property name="style">RegistroCard.TFrame</property>
+            <property name="padding">16</property>
+            <property name="style">RegistroPanel.TFrame</property>
             <layout manager="grid">
               <property name="column">1</property>
               <property name="padx">8 0</property>
@@ -401,7 +417,7 @@
                 <layout manager="grid">
                   <property name="column">0</property>
                   <property name="columnspan">2</property>
-                  <property name="pady">0 14</property>
+                  <property name="pady">0 10</property>
                   <property name="row">0</property>
                   <property name="sticky">ew</property>
                 </layout>
@@ -411,13 +427,15 @@
                 <child>
                   <object class="ttk.Label" id="icono_jornada" named="True">
                     <property name="style">RegistroCardIcon.TLabel</property>
-                    <property name="text">🕐</property>
+                    <property name="text" />
                     <layout manager="grid">
                       <property name="column">0</property>
                       <property name="padx">0 10</property>
                       <property name="row">0</property>
                       <property name="rowspan">2</property>
                     </layout>
+                    <property name="padding">10 8</property>
+                    <property name="image">../images/reloj.png</property>
                   </object>
                 </child>
                 <child>
@@ -463,7 +481,7 @@
                 <layout manager="grid">
                   <property name="column">0</property>
                   <property name="columnspan">2</property>
-                  <property name="pady">0 16</property>
+                  <property name="pady">0 24</property>
                   <property name="row">2</property>
                   <property name="sticky">ew</property>
                 </layout>
@@ -481,11 +499,12 @@
                       <property name="row">0</property>
                       <property name="sticky">ew</property>
                     </layout>
+                    <property name="style">RegistroAccion.TCombobox</property>
                   </object>
                 </child>
                 <child>
                   <object class="ttk.Frame" id="badge_accion" named="True">
-                    <property name="padding">8 12</property>
+                    <property name="padding">14 16</property>
                     <property name="style">AccionEntrada.TFrame</property>
                     <layout manager="grid">
                       <property name="column">1</property>
@@ -498,13 +517,14 @@
                     <child>
                       <object class="ttk.Label" id="icono_badge_accion" named="True">
                         <property name="style">AccionEntradaIcon.TLabel</property>
-                        <property name="text">➜</property>
+                        <property name="text" />
                         <layout manager="grid">
                           <property name="column">0</property>
                           <property name="padx">0 8</property>
                           <property name="row">0</property>
                           <property name="rowspan">2</property>
                         </layout>
+                        <property name="image">../images/entrada.png</property>
                       </object>
                     </child>
                     <child>
@@ -561,7 +581,7 @@
             </child>
             <child>
               <object class="ttk.Frame" id="fila_inicio_previsto" named="True">
-                <property name="style">RegistroCard.TFrame</property>
+                <property name="style">RegistroInput.TFrame</property>
                 <layout manager="grid">
                   <property name="column">0</property>
                   <property name="padx">0 8</property>
@@ -573,30 +593,35 @@
                 </containerlayout>
                 <child>
                   <object class="ttk.Label" id="icono_inicio_previsto" named="True">
-                    <property name="style">RegistroFieldIcon.TLabel</property>
-                    <property name="text">🕐</property>
+                    <property name="style">RegistroInputIcon.TLabel</property>
+                    <property name="text" />
                     <layout manager="grid">
                       <property name="column">0</property>
-                      <property name="padx">0 8</property>
+                      <property name="padx">0</property>
                       <property name="row">0</property>
                     </layout>
+                    <property name="padding">10 7</property>
+                    <property name="image">../images/reloj_24.png</property>
                   </object>
                 </child>
                 <child>
-                  <object class="ttk.Entry" id="hora_inicio_prevista" named="True">
-                    <property name="width">12</property>
+                  <object class="ttk.Spinbox" id="hora_inicio_prevista" named="True">
                     <layout manager="grid">
                       <property name="column">1</property>
                       <property name="row">0</property>
                       <property name="sticky">ew</property>
                     </layout>
+                    <property name="width">8</property>
+                    <property name="justify">left</property>
+                    <property name="wrap">true</property>
+                    <property name="style">Registro.TSpinbox</property>
                   </object>
                 </child>
               </object>
             </child>
             <child>
               <object class="ttk.Frame" id="fila_fin_previsto" named="True">
-                <property name="style">RegistroCard.TFrame</property>
+                <property name="style">RegistroInput.TFrame</property>
                 <layout manager="grid">
                   <property name="column">1</property>
                   <property name="padx">8 0</property>
@@ -608,23 +633,28 @@
                 </containerlayout>
                 <child>
                   <object class="ttk.Label" id="icono_fin_previsto" named="True">
-                    <property name="style">RegistroFieldIcon.TLabel</property>
-                    <property name="text">🕐</property>
+                    <property name="style">RegistroInputIcon.TLabel</property>
+                    <property name="text" />
                     <layout manager="grid">
                       <property name="column">0</property>
-                      <property name="padx">0 8</property>
+                      <property name="padx">0</property>
                       <property name="row">0</property>
                     </layout>
+                    <property name="padding">10 7</property>
+                    <property name="image">../images/reloj_24.png</property>
                   </object>
                 </child>
                 <child>
-                  <object class="ttk.Entry" id="hora_fin_prevista" named="True">
-                    <property name="width">12</property>
+                  <object class="ttk.Spinbox" id="hora_fin_prevista" named="True">
                     <layout manager="grid">
                       <property name="column">1</property>
                       <property name="row">0</property>
                       <property name="sticky">ew</property>
                     </layout>
+                    <property name="width">8</property>
+                    <property name="justify">left</property>
+                    <property name="wrap">true</property>
+                    <property name="style">Registro.TSpinbox</property>
                   </object>
                 </child>
               </object>
@@ -635,8 +665,8 @@
     </child>
     <child>
       <object class="ttk.Frame" id="datos_observaciones" named="True">
-        <property name="padding">18</property>
-        <property name="style">RegistroCard.TFrame</property>
+        <property name="padding">12</property>
+        <property name="style">RegistroPanel.TFrame</property>
         <layout manager="grid">
           <property name="column">0</property>
           <property name="pady">14 0</property>
@@ -651,7 +681,7 @@
             <property name="style">RegistroCard.TFrame</property>
             <layout manager="grid">
               <property name="column">0</property>
-              <property name="pady">0 12</property>
+              <property name="pady">0 4</property>
               <property name="row">0</property>
               <property name="sticky">ew</property>
             </layout>
@@ -661,13 +691,15 @@
             <child>
               <object class="ttk.Label" id="icono_observaciones" named="True">
                 <property name="style">RegistroCardIcon.TLabel</property>
-                <property name="text">💬</property>
+                <property name="text" />
                 <layout manager="grid">
                   <property name="column">0</property>
                   <property name="padx">0 10</property>
                   <property name="row">0</property>
                   <property name="rowspan">2</property>
                 </layout>
+                <property name="padding">10 8</property>
+                <property name="image">../images/observaciones.png</property>
               </object>
             </child>
             <child>
@@ -697,10 +729,10 @@
         </child>
         <child>
           <object class="ttk.Frame" id="fila_observaciones" named="True">
-            <property name="style">RegistroCard.TFrame</property>
+            <property name="style">RegistroInput.TFrame</property>
             <layout manager="grid">
               <property name="column">0</property>
-              <property name="pady">0 12</property>
+              <property name="pady">0 6</property>
               <property name="row">1</property>
               <property name="sticky">ew</property>
             </layout>
@@ -709,23 +741,34 @@
             </containerlayout>
             <child>
               <object class="ttk.Label" id="icono_texto_observaciones" named="True">
-                <property name="style">RegistroFieldIcon.TLabel</property>
-                <property name="text">📄</property>
+                <property name="style">RegistroInputIcon.TLabel</property>
+                <property name="text" />
                 <layout manager="grid">
                   <property name="column">0</property>
-                  <property name="padx">0 8</property>
+                  <property name="padx">0</property>
                   <property name="row">0</property>
                 </layout>
+                <property name="padding">10 7</property>
+                <property name="image">../images/observaciones_24.png</property>
               </object>
             </child>
             <child>
-              <object class="ttk.Entry" id="observaciones" named="True">
-                <property name="width">80</property>
+              <object class="tk.Text" id="observaciones" named="True">
                 <layout manager="grid">
                   <property name="column">1</property>
                   <property name="row">0</property>
                   <property name="sticky">ew</property>
                 </layout>
+                <property name="height">2</property>
+                <property name="width">60</property>
+                <property name="wrap">word</property>
+                <property name="background">#FFFFFF</property>
+                <property name="foreground">#172554</property>
+                <property name="relief">flat</property>
+                <property name="borderwidth">0</property>
+                <property name="padx">10</property>
+                <property name="pady">4</property>
+                <property name="highlightthickness">0</property>
               </object>
             </child>
           </object>
@@ -733,7 +776,7 @@
         <child>
           <object class="ttk.Label" id="aviso_fecha_hora" named="True">
             <property name="style">RegistroNotice.TLabel</property>
-            <property name="text" translatable="yes">ℹ  La fecha y la hora del fichaje se registran automáticamente.</property>
+            <property name="text" translatable="yes">ⓘ   La fecha y la hora del fichaje se registran automáticamente.</property>
             <layout manager="grid">
               <property name="column">0</property>
               <property name="row">2</property>
@@ -754,31 +797,37 @@
         <containerlayout manager="grid">
           <property type="column" id="0" name="weight">1</property>
           <property type="column" id="1" name="weight">1</property>
+          <property type="column" id="0" name="uniform">registro_columnas</property>
+          <property type="column" id="1" name="uniform">registro_columnas</property>
         </containerlayout>
         <child>
           <object class="ttk.Button" id="registrar_fichaje" named="True">
             <property name="command" type="command" cbtype="simple">guardar_registro</property>
             <property name="style">Primary.TButton</property>
-            <property name="text" translatable="yes">🕐  Registrar fichaje</property>
+            <property name="text" translatable="yes">Registrar fichaje</property>
             <layout manager="grid">
               <property name="column">0</property>
               <property name="padx">0 8</property>
               <property name="row">0</property>
               <property name="sticky">ew</property>
             </layout>
+            <property name="image">../images/reloj_24.png</property>
+            <property name="compound">left</property>
           </object>
         </child>
         <child>
           <object class="ttk.Button" id="limpiar_formulario" named="True">
             <property name="command" type="command" cbtype="simple">limpiar_formulario</property>
             <property name="style">Secondary.TButton</property>
-            <property name="text" translatable="yes">🧹  Limpiar</property>
+            <property name="text" translatable="yes">Limpiar</property>
             <layout manager="grid">
               <property name="column">1</property>
               <property name="padx">8 0</property>
               <property name="row">0</property>
               <property name="sticky">ew</property>
             </layout>
+            <property name="image">../images/limpiar_24.png</property>
+            <property name="compound">left</property>
           </object>
         </child>
       </object>

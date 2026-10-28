@@ -26,7 +26,7 @@
         </containerlayout>
         <child>
           <object class="ttk.Label" id="panel_icono" named="True">
-            <property name="text">▥</property>
+            <property name="text" />
             <property name="style">PanelIcon.TLabel</property>
             <layout manager="grid">
               <property name="row">0</property>
@@ -35,6 +35,8 @@
               <property name="padx">0 14</property>
               <property name="pady">0</property>
             </layout>
+            <property name="image">../images/grafico.png</property>
+            <property name="compound">left</property>
           </object>
         </child>
         <child>
@@ -133,7 +135,7 @@
             </containerlayout>
             <child>
               <object class="ttk.Label" id="icono_fichajes_hoy" named="True">
-                <property name="text">◷</property>
+                <property name="text" />
                 <property name="style">CardIcon0.TLabel</property>
                 <layout manager="grid">
                   <property name="row">0</property>
@@ -142,6 +144,8 @@
                   <property name="padx">0 14</property>
                   <property name="pady">0 16</property>
                 </layout>
+                <property name="image">../images/reloj.png</property>
+                <property name="compound">left</property>
               </object>
             </child>
             <child>
@@ -200,7 +204,7 @@
             </containerlayout>
             <child>
               <object class="ttk.Label" id="icono_entradas_hoy" named="True">
-                <property name="text">➜</property>
+                <property name="text" />
                 <property name="style">CardIcon1.TLabel</property>
                 <layout manager="grid">
                   <property name="row">0</property>
@@ -209,6 +213,8 @@
                   <property name="padx">0 14</property>
                   <property name="pady">0 16</property>
                 </layout>
+                <property name="image">../images/entrada.png</property>
+                <property name="compound">left</property>
               </object>
             </child>
             <child>
@@ -267,7 +273,7 @@
             </containerlayout>
             <child>
               <object class="ttk.Label" id="icono_salidas_hoy" named="True">
-                <property name="text">➜</property>
+                <property name="text" />
                 <property name="style">CardIcon2.TLabel</property>
                 <layout manager="grid">
                   <property name="row">0</property>
@@ -276,6 +282,8 @@
                   <property name="padx">0 14</property>
                   <property name="pady">0 16</property>
                 </layout>
+                <property name="image">../images/salida.png</property>
+                <property name="compound">left</property>
               </object>
             </child>
             <child>
@@ -334,7 +342,7 @@
             </containerlayout>
             <child>
               <object class="ttk.Label" id="icono_jornadas_abiertas" named="True">
-                <property name="text">◉</property>
+                <property name="text" />
                 <property name="style">CardIcon3.TLabel</property>
                 <layout manager="grid">
                   <property name="row">0</property>
@@ -343,6 +351,8 @@
                   <property name="padx">0 14</property>
                   <property name="pady">0 16</property>
                 </layout>
+                <property name="image">../images/jornada_abierta.png</property>
+                <property name="compound">left</property>
               </object>
             </child>
             <child>
@@ -582,7 +592,7 @@
         </containerlayout>
         <child>
           <object class="ttk.Label" id="archivo_panel" named="True">
-            <property name="text">Archivo: data/control_horarios_viajes.xlsx</property>
+            <property name="text">Archivo: data/control_horarios.xlsx</property>
             <property name="style">PanelFooter.TLabel</property>
             <layout manager="grid">
               <property name="row">0</property>
@@ -608,7 +618,7 @@
         </child>
         <child>
           <object class="ttk.Button" id="actualizar_panel" named="True">
-            <property name="text">⟳  Actualizar</property>
+            <property name="text">Actualizar</property>
             <property name="style">Secondary.TButton</property>
             <layout manager="grid">
               <property name="row">0</property>
@@ -617,6 +627,8 @@
               <property name="padx">10 0</property>
             </layout>
             <property name="command" type="command" cbtype="simple">actualizar_panel</property>
+            <property name="image">../images/actualizar_24.png</property>
+            <property name="compound">left</property>
           </object>
         </child>
       </object>

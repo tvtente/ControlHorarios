@@ -1,114 +1,105 @@
-"""Añade fichajes de ejemplo de los últimos 30 días sin duplicarlos."""
-
+"""Sustituye los fichajes por 60 ejemplos de los flujos actuales de la aplicación."""
+from copy import copy
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from random import Random
+import shutil
 
 from openpyxl import load_workbook
+from openpyxl.formula.translate import Translator
+from openpyxl.utils import get_column_letter
 
 from excel_manager import ExcelManager
 
-
-ARCHIVO = Path(__file__).resolve().parent / "data" / "control_horarios_viajes.xlsx"
-MARCA = "Datos de prueba del panel"
+ARCHIVO = Path(__file__).resolve().parent / 'data' / 'control_horarios.xlsx'
 EMPLEADOS = (
-    ("DEMO001", "Lucía Martín", "Reservas y Emisión"),
-    ("DEMO002", "Diego Ruiz", "Atención al Cliente"),
-    ("DEMO003", "Marta Sánchez", "Operaciones"),
-    ("DEMO004", "Pablo Torres", "Recursos Humanos"),
-    ("DEMO005", "Elena López", "Administración"),
-    ("DEMO006", "Sofía Romero", "Reservas y Emisión"),
-    ("DEMO007", "Javier Díaz", "Atención al Cliente"),
-    ("DEMO008", "Carmen Vega", "Operaciones"),
-    ("DEMO009", "Andrés Pérez", "Administración"),
-    ("DEMO010", "Nuria Castro", "Recursos Humanos"),
+    ('Ana García', 'Reservas y Emisión', 4),
+    ('Carlos López', 'Operaciones', 4),
+    ('Lucía Martín', 'Recursos Humanos', 4),
+    ('Pablo Torres', 'Administración', 4),
+    ('Elena Ruiz', 'Atención al Cliente', 4),
+    ('Diego Sánchez', 'Reservas y Emisión', 4),
+    ('Sofía Romero', 'Operaciones', 4),
+    ('Javier Díaz', 'Recursos Humanos', 4),
+    ('Carmen Vega', 'Administración', 3),
+    ('Andrés Pérez', 'Atención al Cliente', 2),
+    ('Nuria Castro', 'Reservas y Emisión', 2),
+    ('Marta Molina', 'Operaciones', 1),
 )
+ACCIONES = ('Entrada a Turno', 'Inicio de Descanso', 'Fin de Descanso', 'Salida de Turno')
 
 
-def generar():
-    ARCHIVO.parent.mkdir(parents=True, exist_ok=True)
-    ExcelManager(ARCHIVO)
-    libro = load_workbook(ARCHIVO)
+def generar(archivo=ARCHIVO):
+    archivo = Path(archivo)
+    manager = ExcelManager.__new__(ExcelManager)
+    manager.filename = archivo
+    horarios = {d: manager.consultar_horario_departamento(d) for _, d, _ in EMPLEADOS}
+    ahora = datetime.now().replace(microsecond=0)
+    hoy = ahora.date()
+    registros = []
+    # 25 jornadas completas (50 fichajes) distribuidas entre hoy y hace 29 días.
+    for i in range(25):
+        dia = hoy - timedelta(days=29 - round(i * 29 / 24))
+        nombre, departamento, _ = EMPLEADOS[i % len(EMPLEADOS)]
+        horario = horarios[departamento]
+        entrada = datetime.combine(dia, datetime.strptime(horario['hora_inicio_prevista'], '%H:%M').time())
+        salida = datetime.combine(dia, datetime.strptime(horario['hora_fin_prevista'], '%H:%M').time())
+        entrada += timedelta(minutes=(0, 5, -3, 12, 0)[i % 5])
+        salida += timedelta(minutes=(0, 10, -5)[i % 3])
+        if dia == hoy:
+            salida = min(salida, ahora - timedelta(minutes=5))
+            entrada = min(entrada, salida - timedelta(hours=1))
+        for accion, momento in [('Entrada a Turno', entrada), ('Salida de Turno', salida)]:
+            registros.append(dict(
+                id_empleado=f'EMP-{i % len(EMPLEADOS) + 1:03d}', nombre_completo=nombre,
+                departamento=departamento, accion=accion,
+                fecha=momento.strftime('%Y-%m-%d'), hora=momento.strftime('%H:%M:%S'),
+                observaciones='Prueba: jornada histórica', **horario,
+            ))
+    # Los diez últimos son entradas iniciales de mañana para la presentación.
+    horario_idiomas = manager.consultar_horario_departamento('Idiomas')
+    if not all(horario_idiomas.values()):
+        raise ValueError('Falta configurar el departamento Idiomas en Excel.')
+    nombres = ('Laura Fernández', 'Miguel Santos', 'Paula Navarro', 'Daniel Ortega',
+               'Irene Vidal', 'Álvaro Gil', 'Clara León', 'Sergio Ramos', 'Eva Molina', 'Hugo Serrano')
+    for i, nombre in enumerate(nombres, 13):
+        registros.append(dict(
+            id_empleado=f'EMP-{i:03d}', nombre_completo=nombre, departamento='Idiomas',
+            accion='Entrada a Turno', fecha=(hoy + timedelta(days=1)).isoformat(),
+            hora='08:00:00', observaciones='Prueba inicial: presentación de mañana',
+            **horario_idiomas,
+        ))
+    registros.sort(key=lambda r: (r['fecha'], r['hora'], r['id_empleado']))
+    assert len(registros) == 60
+    backup = archivo.parent / 'backups' / f'{archivo.stem}_antes_pruebas60_{ahora:%Y%m%d_%H%M%S}.xlsx'
+    backup.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(archivo, backup)
+    libro = load_workbook(archivo)
     try:
-        hoja = libro["Registros"]
-        encabezados = [celda.value for celda in hoja[1]]
-        columnas = {nombre: indice for indice, nombre in enumerate(encabezados)}
-        registros = list(hoja.iter_rows(min_row=2, values_only=True))
-        existentes = {
-            (fila[columnas["id_empleado"]], fila[columnas["fecha"]],
-             fila[columnas["accion"]]): indice
-            for indice, fila in enumerate(registros, start=2)
-            if str(fila[columnas["observaciones"]] or "").startswith(MARCA)
-        }
-        ids = [fila[columnas["id_registro"]] for fila in registros]
-        siguiente_id = max((valor for valor in ids if type(valor) is int), default=0) + 1
-        ahora = datetime.now()
-        hoy = ahora.date()
-        aleatorio = Random(20261028)
-        nuevos = 0
-        corregidos = 0
-
-        for dias_atras in range(30, -1, -1):
-            dia = hoy - timedelta(days=dias_atras)
-            cantidad = 3 if dia.weekday() >= 5 else 6 + aleatorio.randrange(4)
-            empleados = aleatorio.sample(EMPLEADOS, cantidad)
-            if dia == hoy:
-                empleados = list(EMPLEADOS[:8])
-
-            for indice, (identificador, nombre, departamento) in enumerate(empleados):
-                hora_entrada = datetime.combine(dia, datetime.min.time()).replace(
-                    hour=8 + aleatorio.randrange(2), minute=aleatorio.randrange(0, 60, 10)
-                )
-                hora_salida = hora_entrada + timedelta(
-                    hours=7 + aleatorio.randrange(2), minutes=aleatorio.randrange(0, 60, 15)
-                )
-                acciones = [("Entrada a Turno", hora_entrada)]
-                if dia != hoy or indice < 6:
-                    acciones.append(("Salida de Turno", hora_salida))
-                if dia == hoy:
-                    entrada_hoy = max(
-                        datetime.combine(hoy, datetime.min.time()),
-                        ahora - timedelta(minutes=110 + indice * 5),
-                    )
-                    salida_hoy = max(
-                        entrada_hoy, ahora - timedelta(minutes=5 + indice)
-                    )
-                    acciones = [("Entrada a Turno", entrada_hoy)]
-                    if indice < 6:
-                        acciones.append(("Salida de Turno", salida_hoy))
-
-                for accion, momento in acciones:
-                    clave = (identificador, dia.isoformat(), accion)
-                    if clave in existentes:
-                        fila = existentes[clave]
-                        hora_guardada = str(hoja.cell(fila, columnas["hora"] + 1).value)
-                        if dia == hoy and hora_guardada > ahora.strftime("%H:%M:%S"):
-                            hoja.cell(fila, columnas["hora"] + 1).value = momento.strftime("%H:%M:%S")
-                            corregidos += 1
-                        continue
-                    registro = {
-                        "id_registro": siguiente_id,
-                        "id_empleado": identificador,
-                        "nombre_completo": nombre,
-                        "departamento": departamento,
-                        "accion": accion,
-                        "fecha": dia.isoformat(),
-                        "hora": momento.strftime("%H:%M:%S"),
-                        "observaciones": MARCA,
-                        "hora_inicio_prevista": "09:00",
-                        "hora_fin_prevista": "17:00",
-                    }
-                    hoja.append([registro.get(nombre) for nombre in encabezados])
-                    existentes[clave] = hoja.max_row
-                    siguiente_id += 1
-                    nuevos += 1
-
-        if nuevos or corregidos:
-            libro.save(ARCHIVO)
-        return nuevos
+        hoja = libro['Registros']
+        headers = [c.value for c in hoja[1]]
+        plantillas = [(c.value, c.coordinate, copy(c._style)) for c in hoja[2]]
+        if hoja.max_row > 1:
+            hoja.delete_rows(2, hoja.max_row - 1)
+        for numero, registro in enumerate(registros, 1):
+            registro['id_registro'] = numero
+            for columna, header in enumerate(headers, 1):
+                celda = hoja.cell(numero + 1, columna)
+                valor, origen, estilo = plantillas[columna - 1]
+                celda._style = copy(estilo)
+                if header in registro:
+                    celda.value = registro[header]
+                elif isinstance(valor, str) and valor.startswith('='):
+                    celda.value = Translator(valor, origin=origen).translate_formula(celda.coordinate)
+        ref = f'A1:{get_column_letter(len(headers))}{len(registros) + 1}'
+        for tabla in hoja.tables.values():
+            tabla.ref = ref
+            if tabla.autoFilter is not None:
+                tabla.autoFilter.ref = ref
+        libro.save(archivo)
     finally:
         libro.close()
+    return len(registros)
 
 
-if __name__ == "__main__":
-    print(f"Fichajes de prueba añadidos: {generar()}")
+if __name__ == '__main__':
+    print(f'Fichajes de prueba preparados: {generar()}')

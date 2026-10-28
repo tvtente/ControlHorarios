@@ -60,7 +60,7 @@
         <child>
           <object class="ttk.Label" id="pie_archivo" named="True">
             <property name="style">PanelFooter.TLabel</property>
-            <property name="text">Archivo: data/control_horarios_viajes.xlsx</property>
+            <property name="text">Archivo: data/control_horarios.xlsx</property>
             <layout manager="grid">
               <property name="row">0</property>
               <property name="column">0</property>

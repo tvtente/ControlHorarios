@@ -6,10 +6,10 @@ TEMA = "cosmo"
 
 # Prefer rounded, antialiased families so digits are not bitmap-pixelated.
 PREFERENCIA_FUENTE = (
-    "Ubuntu Sans",
-    "Ubuntu",
     "Noto Sans",
     "DejaVu Sans",
+    "Ubuntu",
+    "Ubuntu Sans",
     "Liberation Sans",
     "Segoe UI",
     "Helvetica",
@@ -439,6 +439,10 @@ def configurar_estilos(ventana):
 def aplicar_estilos_widgets(ventana, builder):
     """Aplica estilos de botones y aviso del formulario de registro."""
 
+    configurar_estilos_registro(ventana)
+    for nombre in ("id_empleado", "nombre_completo", "departamento", "accion",
+                   "hora_inicio_prevista", "hora_fin_prevista", "observaciones"):
+        builder.get_object(nombre).configure(font=tipo(11))
     builder.get_object("registrar_fichaje").configure(style="Primary.TButton")
     builder.get_object("limpiar_formulario").configure(style="Secondary.TButton")
     builder.get_object("aviso_fecha_hora").configure(style="RegistroNotice.TLabel")
@@ -486,3 +490,55 @@ def configurar_estilos_panel(ventana):
     estilo.configure("PanelFooter.TLabel", background="#E9EFF7",
                      foreground="#243456", font=tipo(9))
 
+
+
+def configurar_estilos_registro(ventana):
+    """Tarjetas claras y controles amplios del formulario de jornada."""
+    estilo = ttk.Style(ventana)
+    azul, texto, borde = "#0866EE", "#101D48", "#D5DDE8"
+    estilo.configure("RegistroPanel.TFrame", background="#FFFFFF",
+                     borderwidth=1, relief="solid", bordercolor="#E4EAF2")
+    estilo.configure("RegistroInput.TFrame", background="#FFFFFF",
+                     borderwidth=1, relief="solid", bordercolor=borde)
+    estilo.configure("RegistroInputIcon.TLabel", background="#FFFFFF",
+                     foreground="#687384", font=tipo(14))
+    for nombre in ("Registro.TEntry", "Registro.TCombobox", "Registro.TSpinbox"):
+        estilo.configure(nombre, padding=(10, 9), fieldbackground="#FFFFFF",
+                         foreground=texto, bordercolor=borde, lightcolor=borde,
+                         darkcolor=borde, borderwidth=1, arrowsize=16, font=tipo(11))
+        estilo.map(nombre, bordercolor=[("focus", azul)],
+                   fieldbackground=[("readonly", "#F5F7FA")],
+                   foreground=[("readonly", texto)])
+    estilo.configure("RegistroAccion.TCombobox", padding=(12, 10),
+                     foreground="#183C18", fieldbackground="#EFF9E5",
+                     bordercolor="#CCE7B6", arrowsize=16, font=tipo(11))
+    estilo.map("RegistroAccion.TCombobox",
+               fieldbackground=[("readonly", "#EFF9E5")],
+               foreground=[("readonly", "#183C18")],
+               selectbackground=[("readonly", "#EFF9E5")],
+               selectforeground=[("readonly", "#183C18")])
+    estilo.configure("RegistroTitle.TLabel", font=tipo(18, "bold"))
+    estilo.configure("RegistroSubtitle.TLabel", font=tipo(11))
+    estilo.configure("RegistroClockDate.TLabel", font=tipo(10))
+    estilo.configure("RegistroClockTime.TLabel", font=tipo(21, "bold"))
+    estilo.configure("RegistroStatusCaption.TLabel", font=tipo(10))
+    estilo.configure("RegistroStatusValue.TLabel", font=tipo(11, "bold"))
+    estilo.configure("RegistroStatusDot.TLabel", font=tipo(20))
+    estilo.configure("RegistroCardIcon.TLabel", background="#FFFFFF",
+                     foreground="#0860CF", font=tipo(21, "bold"))
+    estilo.configure("RegistroCardTitle.TLabel", font=tipo(14, "bold"))
+    estilo.configure("RegistroCardSubtitle.TLabel", font=tipo(10))
+    estilo.configure("RegistroField.TLabel", font=tipo(11))
+    estilo.configure("RegistroNotice.TLabel", padding=(14, 8), font=tipo(10))
+    estilo.configure("Primary.TButton", background=azul, padding=(18, 14),
+                     font=tipo(12, "bold"))
+    estilo.configure("Secondary.TButton", padding=(18, 14), font=tipo(12, "bold"))
+    for nombre, fondo, acento in (("Entrada", "#ECF8DF", "#248B12"),
+                                  ("Salida", "#FFF0F0", "#D3323C"),
+                                  ("Descanso", "#FFF5DC", "#B97800"),
+                                  ("Neutro", "#F1F5F9", "#64748B")):
+        estilo.configure(f"Accion{nombre}.TFrame", background=fondo)
+        for sufijo, tamano, peso in (("Icon", 24, "bold"),
+                                      ("Title", 12, "bold"), ("Sub", 9, "normal")):
+            estilo.configure(f"Accion{nombre}{sufijo}.TLabel", background=fondo,
+                             foreground=acento, font=tipo(tamano, peso))

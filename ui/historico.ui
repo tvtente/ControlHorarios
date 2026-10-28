@@ -123,6 +123,8 @@
               <property name="padx">5</property>
               <property name="pady">7</property>
             </layout>
+            <property name="image">../images/buscar_24.png</property>
+            <property name="compound">left</property>
           </object>
         </child>
         <child>
@@ -137,6 +139,8 @@
               <property name="padx">5</property>
               <property name="pady">7</property>
             </layout>
+            <property name="image">../images/limpiar_24.png</property>
+            <property name="compound">left</property>
           </object>
         </child>
       </object>
@@ -262,6 +266,7 @@
               <property name="column">1</property>
               <property name="sticky">ns</property>
             </layout>
+            <property name="takefocus">false</property>
           </object>
         </child>
         <child>
@@ -305,8 +310,45 @@
             <property name="style">primary.TButton</property>
             <layout manager="grid">
               <property name="row">0</property>
-              <property name="column">1</property>
+              <property name="column">4</property>
               <property name="sticky">ew</property>
+              <property name="padx">5</property>
+              <property name="pady">7</property>
+            </layout>
+            <property name="image">../images/actualizar_24.png</property>
+            <property name="compound">left</property>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Button" id="pagina_anterior" named="True">
+            <property name="text">‹ Anterior</property>
+            <property name="command" type="command" cbtype="simple">pagina_anterior</property>
+            <layout manager="grid">
+              <property name="row">0</property>
+              <property name="column">1</property>
+              <property name="padx">5</property>
+              <property name="pady">7</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="indicador_pagina" named="True">
+            <property name="text">Página 1 de 1</property>
+            <layout manager="grid">
+              <property name="row">0</property>
+              <property name="column">2</property>
+              <property name="padx">5</property>
+              <property name="pady">7</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Button" id="pagina_siguiente" named="True">
+            <property name="text">Siguiente ›</property>
+            <property name="command" type="command" cbtype="simple">pagina_siguiente</property>
+            <layout manager="grid">
+              <property name="row">0</property>
+              <property name="column">3</property>
               <property name="padx">5</property>
               <property name="pady">7</property>
             </layout>

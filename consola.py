@@ -6,7 +6,7 @@ from excel_manager import ExcelManager
 def main():
     carpeta_datos = Path(__file__).resolve().parent / "data"
     carpeta_datos.mkdir(parents=True, exist_ok=True)
-    excel = ExcelManager(carpeta_datos / "control_horarios_viajes.xlsx")
+    excel = ExcelManager(carpeta_datos / "control_horarios.xlsx")
 
     print("1. Register a record")
     print("2. Show all records")
