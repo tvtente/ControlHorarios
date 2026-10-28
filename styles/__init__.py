@@ -199,6 +199,192 @@ def configurar_estilos(ventana):
         ],
     )
 
+    # Registration screen cards (Fichaje / Registro)
+    estilo.configure("RegistroHeader.TFrame", background="#EAF3FF")
+    estilo.configure(
+        "RegistroIcon.TLabel",
+        background="#EAF3FF",
+        foreground=azul,
+        font=tipo(28, "bold"),
+    )
+    estilo.configure(
+        "RegistroTitle.TLabel",
+        background="#EAF3FF",
+        foreground="#0B1F55",
+        font=tipo(20, "bold"),
+    )
+    estilo.configure(
+        "RegistroSubtitle.TLabel",
+        background="#EAF3FF",
+        foreground="#4C5F7E",
+        font=tipo(10),
+    )
+    estilo.configure("RegistroClock.TFrame", background="#DDEBFC")
+    estilo.configure(
+        "RegistroClockIcon.TLabel",
+        background="#DDEBFC",
+        foreground=azul,
+        font=tipo(18, "bold"),
+    )
+    estilo.configure(
+        "RegistroClockDate.TLabel",
+        background="#DDEBFC",
+        foreground="#0B1F55",
+        font=tipo(9, "bold"),
+    )
+    estilo.configure(
+        "RegistroClockTime.TLabel",
+        background="#DDEBFC",
+        foreground="#0B1F55",
+        font=tipo(16, "bold"),
+    )
+    estilo.configure("RegistroStatus.TFrame", background=blanco)
+    estilo.configure(
+        "RegistroStatusDot.TLabel",
+        background=blanco,
+        foreground="#94A3B8",
+        font=tipo(12),
+    )
+    estilo.configure(
+        "RegistroStatusCaption.TLabel",
+        background=blanco,
+        foreground="#64748B",
+        font=tipo(8),
+    )
+    estilo.configure(
+        "RegistroStatusValue.TLabel",
+        background=blanco,
+        foreground="#0F172A",
+        font=tipo(10, "bold"),
+    )
+    estilo.configure("RegistroCard.TFrame", background=blanco)
+    estilo.configure(
+        "RegistroCardIcon.TLabel",
+        background=blanco,
+        foreground=azul,
+        font=tipo(16, "bold"),
+    )
+    estilo.configure(
+        "RegistroCardTitle.TLabel",
+        background=blanco,
+        foreground="#0B1F55",
+        font=tipo(12, "bold"),
+    )
+    estilo.configure(
+        "RegistroCardSubtitle.TLabel",
+        background=blanco,
+        foreground="#64748B",
+        font=tipo(9),
+    )
+    estilo.configure(
+        "RegistroField.TLabel",
+        background=blanco,
+        foreground="#1E293B",
+        font=tipo(10, "bold"),
+    )
+    estilo.configure(
+        "RegistroFieldIcon.TLabel",
+        background=blanco,
+        foreground="#64748B",
+        font=tipo(11),
+    )
+    estilo.configure(
+        "RegistroNotice.TLabel",
+        background="#DBEAFE",
+        foreground="#1D4ED8",
+        font=tipo(9),
+        padding=10,
+    )
+    estilo.configure("AccionEntrada.TFrame", background="#E7F8EE")
+    estilo.configure(
+        "AccionEntradaIcon.TLabel",
+        background="#E7F8EE",
+        foreground="#079447",
+        font=tipo(16, "bold"),
+    )
+    estilo.configure(
+        "AccionEntradaTitle.TLabel",
+        background="#E7F8EE",
+        foreground="#079447",
+        font=tipo(10, "bold"),
+    )
+    estilo.configure(
+        "AccionEntradaSub.TLabel",
+        background="#E7F8EE",
+        foreground="#3F8A5A",
+        font=tipo(8),
+    )
+    estilo.configure("AccionSalida.TFrame", background="#FFF0F0")
+    estilo.configure(
+        "AccionSalidaIcon.TLabel",
+        background="#FFF0F0",
+        foreground="#D3323C",
+        font=tipo(16, "bold"),
+    )
+    estilo.configure(
+        "AccionSalidaTitle.TLabel",
+        background="#FFF0F0",
+        foreground="#D3323C",
+        font=tipo(10, "bold"),
+    )
+    estilo.configure(
+        "AccionSalidaSub.TLabel",
+        background="#FFF0F0",
+        foreground="#B45353",
+        font=tipo(8),
+    )
+    estilo.configure("AccionDescanso.TFrame", background="#FFF5DC")
+    estilo.configure(
+        "AccionDescansoIcon.TLabel",
+        background="#FFF5DC",
+        foreground="#B97800",
+        font=tipo(16, "bold"),
+    )
+    estilo.configure(
+        "AccionDescansoTitle.TLabel",
+        background="#FFF5DC",
+        foreground="#B97800",
+        font=tipo(10, "bold"),
+    )
+    estilo.configure(
+        "AccionDescansoSub.TLabel",
+        background="#FFF5DC",
+        foreground="#A16207",
+        font=tipo(8),
+    )
+    estilo.configure("AccionNeutro.TFrame", background="#F1F5F9")
+    estilo.configure(
+        "AccionNeutroIcon.TLabel",
+        background="#F1F5F9",
+        foreground="#64748B",
+        font=tipo(16, "bold"),
+    )
+    estilo.configure(
+        "AccionNeutroTitle.TLabel",
+        background="#F1F5F9",
+        foreground="#334155",
+        font=tipo(10, "bold"),
+    )
+    estilo.configure(
+        "AccionNeutroSub.TLabel",
+        background="#F1F5F9",
+        foreground="#64748B",
+        font=tipo(8),
+    )
+    estilo.configure("PanelFooter.TFrame", background="#E9EFF7")
+    estilo.configure(
+        "PanelFooter.TLabel",
+        background="#E9EFF7",
+        foreground="#243456",
+        font=tipo(9),
+    )
+    estilo.configure(
+        "PanelFooterReady.TLabel",
+        background="#E9EFF7",
+        foreground="#079447",
+        font=tipo(9, "bold"),
+    )
+
     # Tabs
     estilo.configure(
         "TNotebook",
@@ -251,54 +437,11 @@ def configurar_estilos(ventana):
     )
 
 def aplicar_estilos_widgets(ventana, builder):
-    """Mejora la apariencia de los widgets del formulario."""
+    """Aplica estilos de botones y aviso del formulario de registro."""
 
-    estilo = ttk.Style(ventana)
-
-    # Labels inside the white employee form
-    estilo.configure(
-        "Form.TLabel",
-        background="#FFFFFF",
-        foreground="#111827",
-        font=tipo(11, "bold"),
-    )
-
-    # Main page title
-    estilo.configure(
-        "PageTitle.TLabel",
-        background="#F1F5F9",
-        foreground="#172554",
-        font=tipo(17, "bold"),
-    )
-
-    # Apply styles to the existing Pygubu widgets
-    label_ids = (
-        "etiqueta_id_empleado",
-        "etiqueta_nombre",
-        "etiqueta_departamento",
-        "etiqueta_accion",
-        "etiqueta_inicio_previsto",
-        "etiqueta_fin_previsto",
-        "etiqueta_observaciones",
-        "aviso_fecha_hora",
-    )
-
-    for widget_id in label_ids:
-        widget = builder.get_object(widget_id)
-        if widget is not None:
-            widget.configure(style="Form.TLabel")
-
-    titulo = builder.get_object("titulo_registro")
-    if titulo is not None:
-        titulo.configure(style="PageTitle.TLabel")
-
-    boton_registrar = builder.get_object("registrar_fichaje")
-    if boton_registrar is not None:
-        boton_registrar.configure(style="Primary.TButton")
-
-    boton_limpiar = builder.get_object("limpiar_formulario")
-    if boton_limpiar is not None:
-        boton_limpiar.configure(style="Secondary.TButton")
+    builder.get_object("registrar_fichaje").configure(style="Primary.TButton")
+    builder.get_object("limpiar_formulario").configure(style="Secondary.TButton")
+    builder.get_object("aviso_fecha_hora").configure(style="RegistroNotice.TLabel")
 
 
 def configurar_estilos_panel(ventana):

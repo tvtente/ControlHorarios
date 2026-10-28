@@ -75,6 +75,7 @@ class ControlHorariosApp:
 
         self.builder.connect_callbacks(self)
         aplicar_estilos_widgets(self.ventana, self.builder)
+        self._configurar_registro()
 
         # Load departments from Excel.
         departamentos = self.excel.consultar_departamentos()
@@ -95,6 +96,9 @@ class ControlHorariosApp:
 
         self.configurar_panel()
         self.consultar_registros()
+        self.builder.get_object("pie_archivo").configure(
+            text=f"Archivo: data/{self.excel.filename.name}"
+        )
 
     # Methods connected to the graphical interface
 
@@ -114,9 +118,11 @@ class ControlHorariosApp:
         ):
             self.builder.get_object(nombre).delete(0, tk.END)
 
-        for nombre in ("departamento", "accion"):
-            self.builder.get_object(nombre).set("")
-
+        self.builder.get_object("departamento").set("")
+        self.builder.get_object("accion").set("Entrada a Turno")
+        self.builder.get_object("hora_inicio_prevista").insert(0, "08:00")
+        self.builder.get_object("hora_fin_prevista").insert(0, "17:00")
+        self._actualizar_badge_accion()
         self.builder.get_object("id_empleado").focus_set()
 
     def limpiar_filtros(self):
@@ -156,8 +162,11 @@ class ControlHorariosApp:
         meses = ("enero", "febrero", "marzo", "abril", "mayo", "junio",
                  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre")
         fecha = f"{dias[ahora.weekday()].capitalize()}, {ahora.day} de {meses[ahora.month - 1]} de {ahora.year}"
+        hora = ahora.strftime("%H:%M:%S")
         self.builder.get_object("fecha_panel").configure(text=fecha)
-        self.builder.get_object("hora_panel").configure(text=ahora.strftime("%H:%M:%S"))
+        self.builder.get_object("hora_panel").configure(text=hora)
+        self.builder.get_object("fecha_registro").configure(text=fecha)
+        self.builder.get_object("hora_registro").configure(text=hora)
         self.ventana.after(1000, self._actualizar_reloj)
 
     def actualizar_panel(self, _evento=None):
@@ -178,6 +187,9 @@ class ControlHorariosApp:
         self.builder.get_object("actualizado_panel").configure(
             text="Datos actualizados: " + datetime.now().strftime("%d/%m/%Y %H:%M")
         )
+        self.builder.get_object("pie_registros_hoy").configure(
+            text=f"{self._datos_panel['fichajes_hoy']} registros hoy"
+        )
         self._dibujar_graficos()
 
     def _dibujar_graficos(self, _evento=None):
@@ -192,6 +204,46 @@ class ControlHorariosApp:
         )
 
     # Methods connecting the interface to Excel
+
+    def _configurar_registro(self):
+        """Conecta el badge visual del tipo de registro sin alterar el guardado."""
+        accion = self.builder.get_object("accion")
+        accion.set("Entrada a Turno")
+        accion.bind("<<ComboboxSelected>>", self._actualizar_badge_accion)
+        self._actualizar_badge_accion()
+        self.builder.get_object("hora_inicio_prevista").insert(0, "08:00")
+        self.builder.get_object("hora_fin_prevista").insert(0, "17:00")
+
+    def _actualizar_badge_accion(self, _evento=None):
+        """Colorea el resumen de entrada, salida o descanso según el combobox."""
+        estilos = {
+            "Entrada a Turno": (
+                "AccionEntrada", "➜", "ENTRADA", "Inicio de jornada"
+            ),
+            "Salida de Turno": (
+                "AccionSalida", "⇦", "SALIDA", "Fin de jornada"
+            ),
+            "Inicio de Descanso": (
+                "AccionDescanso", "⏸", "DESCANSO", "Inicio de pausa"
+            ),
+            "Fin de Descanso": (
+                "AccionDescanso", "▶", "DESCANSO", "Fin de pausa"
+            ),
+        }
+        prefijo, icono, titulo, subtitulo = estilos.get(
+            self.builder.get_object("accion").get(),
+            ("AccionNeutro", "●", "TIPO", "Selecciona un registro"),
+        )
+        self.builder.get_object("badge_accion").configure(style=f"{prefijo}.TFrame")
+        self.builder.get_object("icono_badge_accion").configure(
+            style=f"{prefijo}Icon.TLabel", text=icono
+        )
+        self.builder.get_object("titulo_badge_accion").configure(
+            style=f"{prefijo}Title.TLabel", text=titulo
+        )
+        self.builder.get_object("subtitulo_badge_accion").configure(
+            style=f"{prefijo}Sub.TLabel", text=subtitulo
+        )
 
     def guardar_registro(self):
         """Recoge los campos y guarda el registro en Excel."""

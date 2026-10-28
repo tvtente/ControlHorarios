@@ -20,7 +20,7 @@
         </layout>
         <child>
           <object class="ttk.Notebook.Tab" id="tab_registro" named="True">
-            <property name="text">Fichaje / Registro</property>
+            <property name="text">📋  Fichaje / Registro</property>
             <child>
               <object class="ttk.Frame" id="contenedor_registro" named="True" />
             </child>
@@ -28,7 +28,7 @@
         </child>
         <child>
           <object class="ttk.Notebook.Tab" id="tab_panel" named="True">
-            <property name="text">Panel de Control</property>
+            <property name="text">📊  Panel de Control</property>
             <child>
               <object class="ttk.Frame" id="contenedor_panel" named="True" />
             </child>
@@ -36,10 +36,73 @@
         </child>
         <child>
           <object class="ttk.Notebook.Tab" id="tab_historico" named="True">
-            <property name="text">Histórico Excel</property>
+            <property name="text">📑  Histórico Excel</property>
             <child>
               <object class="ttk.Frame" id="contenedor_historico" named="True" />
             </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Frame" id="pie_aplicacion" named="True">
+        <property name="padding">8 4</property>
+        <property name="style">PanelFooter.TFrame</property>
+        <layout manager="grid">
+          <property name="row">1</property>
+          <property name="column">0</property>
+          <property name="sticky">ew</property>
+          <property name="pady">8 0</property>
+        </layout>
+        <containerlayout manager="grid">
+          <property type="column" id="2" name="weight">1</property>
+        </containerlayout>
+        <child>
+          <object class="ttk.Label" id="pie_archivo" named="True">
+            <property name="style">PanelFooter.TLabel</property>
+            <property name="text">Archivo: data/control_horarios_viajes.xlsx</property>
+            <layout manager="grid">
+              <property name="row">0</property>
+              <property name="column">0</property>
+              <property name="sticky">w</property>
+              <property name="padx">4 6</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="pie_separador" named="True">
+            <property name="style">PanelFooter.TLabel</property>
+            <property name="text">|</property>
+            <layout manager="grid">
+              <property name="row">0</property>
+              <property name="column">1</property>
+              <property name="sticky">w</property>
+              <property name="padx">4</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="pie_listo" named="True">
+            <property name="style">PanelFooterReady.TLabel</property>
+            <property name="text">●  Listo</property>
+            <layout manager="grid">
+              <property name="row">0</property>
+              <property name="column">2</property>
+              <property name="sticky">w</property>
+              <property name="padx">4</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="pie_registros_hoy" named="True">
+            <property name="style">PanelFooter.TLabel</property>
+            <property name="text">0 registros hoy</property>
+            <layout manager="grid">
+              <property name="row">0</property>
+              <property name="column">3</property>
+              <property name="sticky">e</property>
+              <property name="padx">4</property>
+            </layout>
           </object>
         </child>
       </object>
