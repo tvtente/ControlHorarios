@@ -440,7 +440,7 @@ def aplicar_estilos_widgets(ventana, builder):
     """Aplica estilos de botones y aviso del formulario de registro."""
 
     configurar_estilos_registro(ventana)
-    for nombre in ("id_empleado", "nombre_completo", "departamento", "accion",
+    for nombre in ("id_empleado", "nombre_completo", "departamento",
                    "hora_inicio_prevista", "hora_fin_prevista", "observaciones"):
         builder.get_object(nombre).configure(font=tipo(11))
     builder.get_object("registrar_fichaje").configure(style="Primary.TButton")
@@ -502,6 +502,24 @@ def configurar_estilos_registro(ventana):
                      borderwidth=1, relief="solid", bordercolor=borde)
     estilo.configure("RegistroInputIcon.TLabel", background="#FFFFFF",
                      foreground="#687384", font=tipo(14))
+    estilo.configure("RegistroPaso.TButton", padding=(8, 9),
+                     background=azul, foreground="#FFFFFF",
+                     font=tipo(10, "bold"), borderwidth=0)
+    estilo.map("RegistroPaso.TButton",
+               background=[("disabled", "#E7EDF5"), ("active", "#0055C7")],
+               foreground=[("disabled", "#64748B")])
+    estilo.configure("HistoricoFiltros.TFrame", background="#FFFFFF")
+    for nombre, fondo, acento, seleccionado in (
+        ("Todos", "#EAF3FF", "#0866EE", "#D8E9FF"),
+        ("Entrada", "#ECF8DF", "#248B12", "#DDF2C9"),
+        ("Descanso", "#FFF5DC", "#9B6800", "#FFE9AD"),
+        ("Salida", "#FFF0F0", "#D3323C", "#FFE0E2"),
+    ):
+        estilo.configure(f"Historico{nombre}.TCheckbutton", background=fondo,
+                         foreground=acento, padding=(8, 6),
+                         font=tipo(10, "bold"))
+        estilo.map(f"Historico{nombre}.TCheckbutton",
+                   background=[("selected", seleccionado), ("active", seleccionado)])
     for nombre in ("Registro.TEntry", "Registro.TCombobox", "Registro.TSpinbox"):
         estilo.configure(nombre, padding=(10, 9), fieldbackground="#FFFFFF",
                          foreground=texto, bordercolor=borde, lightcolor=borde,

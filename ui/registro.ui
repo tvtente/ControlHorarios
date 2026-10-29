@@ -176,11 +176,9 @@
           <property name="sticky">nsew</property>
         </layout>
         <containerlayout manager="grid">
-          <property type="column" id="0" name="weight">1</property>
-          <property type="column" id="1" name="weight">1</property>
+          <property type="column" id="0" name="weight">2</property>
+          <property type="column" id="1" name="weight">3</property>
           <property type="row" id="0" name="weight">1</property>
-          <property type="column" id="0" name="uniform">registro_columnas</property>
-          <property type="column" id="1" name="uniform">registro_columnas</property>
         </containerlayout>
         <child>
           <object class="ttk.Frame" id="datos_empleado" named="True">
@@ -383,7 +381,6 @@
                 <child>
                   <object class="ttk.Combobox" id="departamento" named="True">
                     <property name="state">readonly</property>
-                    <property name="values">{Reservas y Emisión} {Atención al Cliente} {Operaciones} {Recursos Humanos} {Administración}</property>
                     <property name="width">32</property>
                     <layout manager="grid">
                       <property name="column">1</property>
@@ -452,7 +449,7 @@
                 <child>
                   <object class="ttk.Label" id="subtitulo_jornada" named="True">
                     <property name="style">RegistroCardSubtitle.TLabel</property>
-                    <property name="text" translatable="yes">Selecciona el tipo de registro y los horarios previstos</property>
+                    <property name="text" translatable="yes">El siguiente movimiento depende de los fichajes del empleado</property>
                     <layout manager="grid">
                       <property name="column">1</property>
                       <property name="pady">2 0</property>
@@ -466,7 +463,7 @@
             <child>
               <object class="ttk.Label" id="etiqueta_accion" named="True">
                 <property name="style">RegistroField.TLabel</property>
-                <property name="text" translatable="yes">Tipo de registro *</property>
+                <property name="text" translatable="yes">Siguiente movimiento</property>
                 <layout manager="grid">
                   <property name="column">0</property>
                   <property name="pady">0 4</property>
@@ -489,27 +486,13 @@
                   <property type="column" id="0" name="weight">1</property>
                 </containerlayout>
                 <child>
-                  <object class="ttk.Combobox" id="accion" named="True">
-                    <property name="state">readonly</property>
-                    <property name="values">{Entrada a Turno} {Salida de Turno} {Inicio de Descanso} {Fin de Descanso}</property>
-                    <property name="width">28</property>
-                    <layout manager="grid">
-                      <property name="column">0</property>
-                      <property name="padx">0 10</property>
-                      <property name="row">0</property>
-                      <property name="sticky">ew</property>
-                    </layout>
-                    <property name="style">RegistroAccion.TCombobox</property>
-                  </object>
-                </child>
-                <child>
                   <object class="ttk.Frame" id="badge_accion" named="True">
                     <property name="padding">14 16</property>
                     <property name="style">AccionEntrada.TFrame</property>
                     <layout manager="grid">
-                      <property name="column">1</property>
+                      <property name="column">0</property>
                       <property name="row">0</property>
-                      <property name="sticky">e</property>
+                      <property name="sticky">ew</property>
                     </layout>
                     <containerlayout manager="grid">
                       <property type="column" id="1" name="weight">1</property>
@@ -556,7 +539,7 @@
             <child>
               <object class="ttk.Label" id="etiqueta_inicio_previsto" named="True">
                 <property name="style">RegistroField.TLabel</property>
-                <property name="text" translatable="yes">Inicio previsto (HH:MM) *</property>
+                <property name="text" translatable="yes">Entrada prevista · HH:MM *</property>
                 <layout manager="grid">
                   <property name="column">0</property>
                   <property name="padx">0 8</property>
@@ -569,12 +552,12 @@
             <child>
               <object class="ttk.Label" id="etiqueta_fin_previsto" named="True">
                 <property name="style">RegistroField.TLabel</property>
-                <property name="text" translatable="yes">Fin previsto (HH:MM) *</property>
+                <property name="text" translatable="yes">Salida prevista · HH:MM *</property>
                 <layout manager="grid">
                   <property name="column">1</property>
                   <property name="padx">8 0</property>
-                  <property name="pady">0 4</property>
-                  <property name="row">3</property>
+                  <property name="pady">12 4</property>
+                  <property name="row">5</property>
                   <property name="sticky">w</property>
                 </layout>
               </object>
@@ -589,7 +572,7 @@
                   <property name="sticky">ew</property>
                 </layout>
                 <containerlayout manager="grid">
-                  <property type="column" id="1" name="weight">1</property>
+                  <property type="column" id="2" name="weight">1</property>
                 </containerlayout>
                 <child>
                   <object class="ttk.Label" id="icono_inicio_previsto" named="True">
@@ -600,7 +583,7 @@
                       <property name="padx">0</property>
                       <property name="row">0</property>
                     </layout>
-                    <property name="padding">10 7</property>
+                    <property name="padding">5 5</property>
                     <property name="image">../images/reloj_24.png</property>
                   </object>
                 </child>
@@ -611,10 +594,22 @@
                       <property name="row">0</property>
                       <property name="sticky">ew</property>
                     </layout>
-                    <property name="width">8</property>
-                    <property name="justify">left</property>
+                    <property name="width">6</property>
+                    <property name="justify">center</property>
                     <property name="wrap">true</property>
                     <property name="style">Registro.TSpinbox</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="ttk.Button" id="boton_inicio_prevista" named="True">
+                    <property name="text">Entrar</property>
+                    <property name="style">RegistroPaso.TButton</property>
+                    <layout manager="grid">
+                      <property name="column">2</property>
+                      <property name="row">0</property>
+                      <property name="padx">8 0</property>
+                      <property name="sticky">ew</property>
+                    </layout>
                   </object>
                 </child>
               </object>
@@ -625,11 +620,11 @@
                 <layout manager="grid">
                   <property name="column">1</property>
                   <property name="padx">8 0</property>
-                  <property name="row">4</property>
+                  <property name="row">6</property>
                   <property name="sticky">ew</property>
                 </layout>
                 <containerlayout manager="grid">
-                  <property type="column" id="1" name="weight">1</property>
+                  <property type="column" id="2" name="weight">1</property>
                 </containerlayout>
                 <child>
                   <object class="ttk.Label" id="icono_fin_previsto" named="True">
@@ -640,7 +635,7 @@
                       <property name="padx">0</property>
                       <property name="row">0</property>
                     </layout>
-                    <property name="padding">10 7</property>
+                    <property name="padding">5 5</property>
                     <property name="image">../images/reloj_24.png</property>
                   </object>
                 </child>
@@ -651,10 +646,152 @@
                       <property name="row">0</property>
                       <property name="sticky">ew</property>
                     </layout>
-                    <property name="width">8</property>
-                    <property name="justify">left</property>
+                    <property name="width">6</property>
+                    <property name="justify">center</property>
                     <property name="wrap">true</property>
                     <property name="style">Registro.TSpinbox</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="ttk.Button" id="boton_fin_prevista" named="True">
+                    <property name="text">Terminar jornada</property>
+                    <property name="style">RegistroPaso.TButton</property>
+                    <layout manager="grid">
+                      <property name="column">2</property>
+                      <property name="row">0</property>
+                      <property name="padx">8 0</property>
+                      <property name="sticky">ew</property>
+                    </layout>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Label" id="etiqueta_inicio_descanso_previsto" named="True">
+                <property name="style">RegistroField.TLabel</property>
+                <property name="text">Inicio descanso · HH:MM</property>
+                <layout manager="grid">
+                  <property name="column">1</property>
+                  <property name="row">3</property>
+                  <property name="sticky">w</property>
+                  <property name="padx">8 0</property>
+                  <property name="pady">0 4</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Label" id="etiqueta_fin_descanso_previsto" named="True">
+                <property name="style">RegistroField.TLabel</property>
+                <property name="text">Fin descanso · HH:MM</property>
+                <layout manager="grid">
+                  <property name="column">0</property>
+                  <property name="row">5</property>
+                  <property name="sticky">w</property>
+                  <property name="padx">0 8</property>
+                  <property name="pady">12 4</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Frame" id="fila_inicio_descanso_previsto" named="True">
+                <property name="style">RegistroInput.TFrame</property>
+                <layout manager="grid">
+                  <property name="column">1</property>
+                  <property name="row">4</property>
+                  <property name="sticky">ew</property>
+                  <property name="padx">8 0</property>
+                </layout>
+                <containerlayout manager="grid">
+                  <property type="column" id="2" name="weight">1</property>
+                </containerlayout>
+                <child>
+                  <object class="ttk.Label" id="icono_inicio_descanso_previsto" named="True">
+                    <property name="style">RegistroInputIcon.TLabel</property>
+                    <property name="text" />
+                    <property name="padding">5 5</property>
+                    <property name="image">../images/reloj_24.png</property>
+                    <layout manager="grid">
+                      <property name="column">0</property>
+                      <property name="row">0</property>
+                      <property name="padx">0</property>
+                    </layout>
+                  </object>
+                </child>
+                <child>
+                  <object class="ttk.Spinbox" id="hora_inicio_descanso_prevista" named="True">
+                    <property name="width">6</property>
+                    <property name="justify">center</property>
+                    <property name="wrap">true</property>
+                    <property name="style">Registro.TSpinbox</property>
+                    <layout manager="grid">
+                      <property name="column">1</property>
+                      <property name="row">0</property>
+                      <property name="sticky">ew</property>
+                    </layout>
+                  </object>
+                </child>
+                <child>
+                  <object class="ttk.Button" id="boton_inicio_descanso_prevista" named="True">
+                    <property name="text">Iniciar descanso</property>
+                    <property name="style">RegistroPaso.TButton</property>
+                    <layout manager="grid">
+                      <property name="column">2</property>
+                      <property name="row">0</property>
+                      <property name="padx">8 0</property>
+                      <property name="sticky">ew</property>
+                    </layout>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Frame" id="fila_fin_descanso_previsto" named="True">
+                <property name="style">RegistroInput.TFrame</property>
+                <layout manager="grid">
+                  <property name="column">0</property>
+                  <property name="row">6</property>
+                  <property name="sticky">ew</property>
+                  <property name="padx">0 8</property>
+                </layout>
+                <containerlayout manager="grid">
+                  <property type="column" id="2" name="weight">1</property>
+                </containerlayout>
+                <child>
+                  <object class="ttk.Label" id="icono_fin_descanso_previsto" named="True">
+                    <property name="style">RegistroInputIcon.TLabel</property>
+                    <property name="text" />
+                    <property name="padding">5 5</property>
+                    <property name="image">../images/reloj_24.png</property>
+                    <layout manager="grid">
+                      <property name="column">0</property>
+                      <property name="row">0</property>
+                      <property name="padx">0</property>
+                    </layout>
+                  </object>
+                </child>
+                <child>
+                  <object class="ttk.Spinbox" id="hora_fin_descanso_prevista" named="True">
+                    <property name="width">6</property>
+                    <property name="justify">center</property>
+                    <property name="wrap">true</property>
+                    <property name="style">Registro.TSpinbox</property>
+                    <layout manager="grid">
+                      <property name="column">1</property>
+                      <property name="row">0</property>
+                      <property name="sticky">ew</property>
+                    </layout>
+                  </object>
+                </child>
+                <child>
+                  <object class="ttk.Button" id="boton_fin_descanso_prevista" named="True">
+                    <property name="text">Fin descanso</property>
+                    <property name="style">RegistroPaso.TButton</property>
+                    <layout manager="grid">
+                      <property name="column">2</property>
+                      <property name="row">0</property>
+                      <property name="padx">8 0</property>
+                      <property name="sticky">ew</property>
+                    </layout>
                   </object>
                 </child>
               </object>

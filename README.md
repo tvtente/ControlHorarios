@@ -29,20 +29,18 @@ La aplicación selecciona Noto Sans o DejaVu Sans cuando están disponibles. Est
 1. Introduce el ID del empleado. La sugerencia `EMP-000` solo indica el formato: no es un valor del formulario.
 2. Pulsa **Tab** o **Intro**. Si el empleado tiene registros en el Excel, se cargan su nombre, departamento y horario previsto. Se reconocen como el mismo ID `emp001`, `EMP001` y `EMP-001`.
 3. Para un empleado nuevo, escribe su nombre completo y selecciona un departamento.
-4. Selecciona el tipo de registro: entrada de turno, salida de turno, inicio de descanso o fin de descanso.
+4. La aplicación habilita solo el siguiente movimiento: **Entrar → Iniciar descanso → Fin descanso → Terminar jornada**. Su horario es el único editable. El botón junto a ese horario registra el fichaje; también puedes usar **Registrar fichaje**.
 5. Comprueba las horas previstas. Los controles permiten escribir `HH:MM` o cambiar los minutos con sus flechas. Al cambiar de departamento, se consulta su horario en Excel.
 6. Añade observaciones si las necesitas y pulsa **Registrar fichaje**.
 
-La fecha y la hora del fichaje se toman del equipo automáticamente. Los campos marcados con asterisco son obligatorios. **Limpiar** vacía el formulario y restablece las horas iniciales de 08:00 y 17:00; al elegir un departamento se cargan sus horas reales.
+La fecha y la hora del fichaje se toman del equipo automáticamente. Los campos marcados con asterisco son obligatorios. Tras guardar, el empleado permanece en el formulario y se habilita el siguiente paso. **Limpiar** vacía el formulario y los cuatro horarios; al elegir un departamento se cargan sus horas previstas.
 
 ### Validaciones
 
 - Debes indicar ID, nombre completo, departamento y tipo de registro.
 - Las horas previstas deben estar completas y usar el formato de 24 horas `HH:MM`, entre `00:00` y `23:59`.
-- No se puede registrar otra entrada mientras exista una jornada abierta.
-- La salida necesita una entrada previa y no puede registrarse durante un descanso sin finalizar.
-- Solo se puede iniciar un descanso durante una jornada abierta y sin otro descanso activo.
-- Solo se puede finalizar un descanso que esté abierto.
+- Los movimientos deben seguir el orden entrada, inicio de descanso, fin de descanso y salida.
+- Tras terminar la jornada, no se puede iniciar otra el mismo día.
 
 Si falta un dato o una hora no es válida, el formulario muestra un mensaje en español, marca el campo en rojo y sitúa allí el cursor. Si la secuencia de fichajes no es válida, se explica el motivo sin guardar el movimiento.
 
@@ -73,32 +71,35 @@ El archivo utilizado es `data/control_horarios.xlsx`. Su ubicación se calcula d
 
 | Hoja | Tabla | Contenido |
 | --- | --- | --- |
-| Registros | TablaRegistros | Fichajes, horas previstas y fórmulas de diferencia y cumplimiento. |
-| Departamentos | TablaDepartamentos | Departamento, hora de entrada, hora de salida y tolerancia en minutos. |
+| Registros | TablaRegistros | Fichajes, cuatro horas previstas contiguas, fórmulas de diferencia y cumplimiento, cuatro horas reales contiguas y horas trabajadas netas en la fila de salida. |
+| Departamentos | TablaDepartamentos | Departamento, hora de entrada, hora de salida, tolerancia en minutos, inicio y fin previstos del descanso. |
 
 Conserva los encabezados: el programa los utiliza para identificar los campos. Las tablas permiten seleccionar columnas por su nombre y usar referencias como `TablaRegistros[hora]` en Excel. Al guardar un nuevo fichaje, la tabla se amplía y se conservan las fórmulas existentes.
 
 La aplicación obtiene las horas previstas de la hoja **Departamentos**, sin mostrar el texto de las fórmulas en el histórico. Por ejemplo, **Idiomas** tiene horario de **08:00 a 13:00**.
 
+En la fila de **Salida de Turno**, Excel calcula `horas_trabajadas = (salida_real - entrada_real) - (fin_descanso_real - inicio_descanso_real)`. Si no hay descanso registrado, descuenta cero; si falta la entrada o la salida, deja el resultado vacío. El resultado tiene formato de duración `[h]:mm`.
+
 Guarda los cambios hechos en Excel para que la aplicación pueda leerlos. Evita guardar simultáneamente desde Excel y desde la aplicación. Las copias realizadas antes de sustituir los datos de prueba se encuentran en `data/backups/`.
 
 ## Datos de prueba para la presentación
 
-El conjunto preparado el **28 de octubre de 2026** contiene **60 fichajes**:
+El conjunto de prueba contiene **76 fichajes**:
 
-- 50 fichajes de jornadas distribuidas entre el **29 de septiembre y el 28 de octubre de 2026**.
-- Los 10 últimos son entradas del **29 de octubre de 2026 a las 08:00**, del departamento **Idiomas**, con horario previsto de **08:00 a 13:00**.
+- 50 fichajes de entrada y salida de jornadas distribuidas entre hoy y los 29 días anteriores.
+- 16 fichajes de inicio y fin de descanso correspondientes a ocho de esas jornadas.
+- Los 10 últimos son entradas para mañana a las 08:00 del departamento **Idiomas**.
 - Los empleados de esas diez entradas van de `EMP-013` a `EMP-022`. Por ejemplo, `EMP-022` corresponde a **Hugo Serrano**.
 
-Los 60 registros ocupan tres páginas del histórico. La aplicación toma la fecha real del equipo para determinar el estado y los indicadores del día.
+Los 76 registros ocupan cuatro páginas del histórico. La aplicación toma la fecha real del equipo para determinar el estado y los indicadores del día.
 
-Para **sustituir los fichajes actuales** por un nuevo conjunto de 60 ejemplos:
+Para **sustituir los fichajes actuales** por un nuevo conjunto de 76 ejemplos:
 
 ```bash
 uv run python generar_datos_prueba.py
 ```
 
-Este comando guarda una copia anterior, conserva la hoja Departamentos y reemplaza los fichajes. Genera 50 registros de los últimos 30 días y 10 entradas para el día siguiente a su ejecución. Por tanto, ejecutarlo otro día cambia las fechas del conjunto de prueba.
+Este comando guarda una copia anterior, conserva la hoja Departamentos y reemplaza los fichajes. Genera 66 registros de los últimos 30 días y 10 entradas para el día siguiente a su ejecución. Por tanto, ejecutarlo otro día cambia las fechas del conjunto de prueba.
 
 ## Diseño de las pantallas
 

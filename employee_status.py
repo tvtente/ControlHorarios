@@ -1,6 +1,7 @@
 """Estado del empleado calculado a partir de sus fichajes, sin interfaz gráfica."""
 from datetime import date, datetime, time, timedelta
 import re
+import unicodedata
 
 
 def _fecha(valor):
@@ -71,27 +72,45 @@ def estado_empleado(registros, empleado, *, ahora=None):
     return resultado
 
 
+def siguiente_fichaje(registros, empleado, *, ahora=None):
+    """Indica el único movimiento permitido en la jornada actual."""
+    ahora = ahora or datetime.now()
+    estado = estado_empleado(registros, empleado, ahora=ahora)["texto"]
+    if estado in ("Sin fichaje", "Sin fichaje hoy"):
+        return "Entrada a Turno"
+    if estado == "En descanso":
+        return "Fin de Descanso"
+    if estado == "Jornada finalizada":
+        return None
+
+    clave = normalizar_id_empleado(empleado)
+    movimientos = []
+    for orden, registro in enumerate(registros):
+        if normalizar_id_empleado(registro.get("id_empleado")) != clave:
+            continue
+        fecha = _fecha(registro.get("fecha"))
+        if fecha is None:
+            continue
+        instante = datetime.combine(fecha, _hora(registro.get("hora")) or time.min)
+        if instante <= ahora:
+            movimientos.append((instante, orden, str(registro.get("accion") or "").strip().casefold()))
+    if not movimientos:
+        return "Entrada a Turno"
+    ultima = max(movimientos)[2]
+    return "Salida de Turno" if ultima == "fin de descanso" else "Inicio de Descanso"
+
+
 def validar_fichaje(registros, empleado, accion, *, ahora=None):
-    """Impide movimientos que no correspondan con el estado actual del empleado."""
+    """Exige entrada, inicio/fin de descanso y salida, en ese orden."""
     aliases = {'entrada': 'Entrada a Turno', 'salida': 'Salida de Turno'}
     accion = aliases.get(accion.strip().casefold(), accion.strip())
-    estado = estado_empleado(registros, empleado, ahora=ahora)['texto']
-    if accion == 'Entrada a Turno':
-        if estado in ('En jornada', 'En descanso'):
-            raise ValueError('El empleado ya tiene una jornada abierta. Registra la salida antes de otra entrada.')
-    elif accion == 'Inicio de Descanso':
-        if estado != 'En jornada':
-            raise ValueError('Solo se puede iniciar un descanso con una jornada abierta y sin otro descanso activo.')
-    elif accion == 'Fin de Descanso':
-        if estado != 'En descanso':
-            raise ValueError('El empleado no tiene un descanso abierto que finalizar.')
-    elif accion == 'Salida de Turno':
-        if estado == 'En descanso':
-            raise ValueError('Finaliza el descanso antes de registrar la salida de turno.')
-        if estado != 'En jornada':
-            raise ValueError('No se puede registrar una salida sin una entrada de turno previa.')
-    else:
+    if accion not in ('Entrada a Turno', 'Inicio de Descanso', 'Fin de Descanso', 'Salida de Turno'):
         raise ValueError('Selecciona un tipo de registro válido.')
+    siguiente = siguiente_fichaje(registros, empleado, ahora=ahora)
+    if siguiente is None:
+        raise ValueError('La jornada de hoy ya terminó. Podrás registrar otra entrada el próximo día.')
+    if accion != siguiente:
+        raise ValueError(f'El siguiente movimiento permitido es «{siguiente}».')
 
 
 def clave_orden_fichaje(registro):
@@ -103,3 +122,30 @@ def clave_orden_fichaje(registro):
     except (TypeError, ValueError):
         identificador = 0
     return datetime.combine(fecha, hora), identificador
+
+
+def ordenar_fichajes(registros, columna="fecha", descendente=True):
+    """Ordena todos los fichajes antes de paginar, con vacíos siempre al final."""
+    ordenados = sorted(registros, key=clave_orden_fichaje, reverse=True)
+
+    def clave(registro):
+        valor = registro.get(columna)
+        if columna == "id_registro":
+            try:
+                return int(valor)
+            except (TypeError, ValueError):
+                return None
+        if columna == "fecha":
+            fecha = _fecha(valor)
+            hora = _hora(registro.get("hora")) or time.min
+            return (fecha, hora) if fecha else None
+        if columna == "hora" or columna.startswith("hora_"):
+            return _hora(valor)
+        if valor in (None, ""):
+            return None
+        texto = unicodedata.normalize("NFKD", str(valor).casefold())
+        return "".join(c for c in texto if not unicodedata.combining(c))
+
+    presentes = [r for r in ordenados if clave(r) is not None]
+    ausentes = [r for r in ordenados if clave(r) is None]
+    return sorted(presentes, key=clave, reverse=descendente) + ausentes

@@ -5,6 +5,8 @@ import re
 from openpyxl import Workbook, load_workbook
 from openpyxl.formula.translate import Translator
 from openpyxl.utils.cell import get_column_letter, range_boundaries
+from openpyxl.worksheet.table import TableColumn
+from copy import copy
 
 
 class ExcelManager:
@@ -19,8 +21,24 @@ class ExcelManager:
         "hora",
         "observaciones",
         "hora_inicio_prevista",
-        "hora_fin_prevista"
+        "hora_inicio_descanso_prevista",
+        "hora_fin_descanso_prevista",
+        "hora_fin_prevista",
+        "diferencia_min",
+        "cumplimiento",
+        "entrada_real",
+        "inicio_descanso_real",
+        "fin_descanso_real",
+        "salida_real",
+        "horas_trabajadas",
     ]
+
+    ACCIONES_JORNADA = {
+        "Entrada a Turno": "entrada_real",
+        "Inicio de Descanso": "inicio_descanso_real",
+        "Fin de Descanso": "fin_descanso_real",
+        "Salida de Turno": "salida_real",
+    }
 
     def __init__(self, filename="control_horarios.xlsx"):
         self.filename = Path(filename)
@@ -50,20 +68,97 @@ class ExcelManager:
                 for col in range(1, sheet.max_column + 1)
             ]
 
-            # Añade las columnas que falten sin borrar los registros.
+            # Reúne las horas previstas antes de las columnas calculadas.
             if not existing_headers or all(h is None for h in existing_headers):
-                sheet.append(self.HEADERS)
+                for indice, header in enumerate(self.HEADERS, 1):
+                    sheet.cell(1, indice).value = header
             else:
-                for header in self.HEADERS:
-                    if header not in existing_headers:
-                        existing_headers.append(header)
-                        sheet.cell(
-                            row=1, column=len(existing_headers)
-                        ).value = header
+                anteriores = {nombre: indice + 1 for indice, nombre in enumerate(existing_headers)}
+                orden = self.HEADERS + [h for h in existing_headers if h not in self.HEADERS]
+                if existing_headers != orden:
+                    filas = [
+                        [(sheet.cell(fila, col).value, copy(sheet.cell(fila, col)._style))
+                         for col in range(1, sheet.max_column + 1)]
+                        for fila in range(2, sheet.max_row + 1)
+                    ]
+                    for col, header in enumerate(orden, 1):
+                        sheet.cell(1, col).value = header
+                    for fila, datos in enumerate(filas, 2):
+                        for col, header in enumerate(orden, 1):
+                            celda = sheet.cell(fila, col)
+                            anterior = anteriores.get(header)
+                            celda.value = datos[anterior - 1][0] if anterior else None
+                            if anterior:
+                                celda._style = copy(datos[anterior - 1][1])
+                            if celda.data_type == "f":
+                                if header == "diferencia_min":
+                                    celda.value = re.sub(rf"\bJ{fila}\b", f"L{fila}", celda.value)
+                                elif header == "cumplimiento":
+                                    celda.value = re.sub(rf"\bK{fila}\b", f"M{fila}", celda.value)
+                    existing_headers = orden
+
+            self._actualizar_jornadas(sheet)
+
+            for tabla in sheet.tables.values():
+                inicio_col, inicio_fila, fin_col, fin_fila = range_boundaries(tabla.ref)
+                if (inicio_col, inicio_fila) != (1, 1):
+                    continue
+                nuevo_fin = len(existing_headers)
+                tabla.tableColumns = [
+                    TableColumn(id=columna, name=str(existing_headers[columna - 1]))
+                    for columna in range(1, nuevo_fin + 1)
+                ]
+                tabla.ref = f"A1:{get_column_letter(nuevo_fin)}{fin_fila}"
+                if tabla.autoFilter is not None:
+                    tabla.autoFilter.ref = tabla.ref
 
             workbook.save(self.filename)
         finally:
             workbook.close()
+
+    @classmethod
+    def _actualizar_jornadas(cls, sheet):
+        """Deja las horas reales y el tiempo neto en la fila de salida."""
+        columnas = {sheet.cell(1, col).value: col for col in range(1, sheet.max_column + 1)}
+        jornadas = {}
+        for fila in range(2, sheet.max_row + 1):
+            empleado = sheet.cell(fila, columnas["id_empleado"]).value
+            fecha = sheet.cell(fila, columnas["fecha"]).value
+            accion = sheet.cell(fila, columnas["accion"]).value
+            hora = sheet.cell(fila, columnas["hora"]).value
+            if not all((empleado, fecha, accion, hora)):
+                continue
+            clave = empleado
+            if accion == "Entrada a Turno":
+                jornadas[clave] = {}
+            jornada = jornadas.setdefault(clave, {})
+            campo = cls.ACCIONES_JORNADA.get(accion)
+            if campo:
+                jornada[campo] = hora
+            if accion != "Salida de Turno":
+                for nombre in (*cls.ACCIONES_JORNADA.values(), "horas_trabajadas"):
+                    sheet.cell(fila, columnas[nombre]).value = None
+                continue
+            for nombre in cls.ACCIONES_JORNADA.values():
+                valor = jornada.get(nombre)
+                celda = sheet.cell(fila, columnas[nombre])
+                celda.value = (
+                    datetime.strptime(valor, "%H:%M:%S").time()
+                    if isinstance(valor, str) else valor
+                ) if valor else None
+                celda.number_format = "hh:mm:ss"
+            resultado = sheet.cell(fila, columnas["horas_trabajadas"])
+            entrada, inicio, fin, salida = (
+                f"{get_column_letter(columnas[nombre])}{fila}"
+                for nombre in cls.ACCIONES_JORNADA.values()
+            )
+            resultado.value = (
+                f'=IF(OR({entrada}="",{salida}=""),"",'
+                f'MOD({salida}-{entrada},1)-IF(OR({inicio}="",{fin}=""),0,'
+                f'MOD({fin}-{inicio},1)))'
+            )
+            resultado.number_format = "[h]:mm"
+            jornadas.pop(clave, None)
 
     # Valida los campos obligatorios y añade el fichaje.
     def guardar_registro(
@@ -74,7 +169,9 @@ class ExcelManager:
         accion,
         observaciones="",
         hora_inicio_prevista="",
-        hora_fin_prevista=""
+        hora_fin_prevista="",
+        hora_inicio_descanso_prevista="",
+        hora_fin_descanso_prevista="",
     ):
         if not isinstance(id_empleado, str) or not id_empleado.strip():
             raise ValueError("Introduce el ID del empleado (por ejemplo, EMP-001).")
@@ -96,6 +193,12 @@ class ExcelManager:
 
         if not isinstance(hora_fin_prevista, str):
             raise ValueError("La hora de fin prevista debe indicarse como texto en formato HH:MM.")
+
+        if not isinstance(hora_inicio_descanso_prevista, str):
+            raise ValueError("La hora de inicio del descanso debe indicarse como texto en formato HH:MM.")
+
+        if not isinstance(hora_fin_descanso_prevista, str):
+            raise ValueError("La hora de fin del descanso debe indicarse como texto en formato HH:MM.")
 
         # Genera el número de registro y captura la fecha y hora actuales.
         registros = self.consultar_registros()
@@ -119,7 +222,9 @@ class ExcelManager:
             "hora": ahora.strftime("%H:%M:%S"),
             "observaciones": observaciones.strip(),
             "hora_inicio_prevista": hora_inicio_prevista.strip(),
-            "hora_fin_prevista": hora_fin_prevista.strip()
+            "hora_fin_prevista": hora_fin_prevista.strip(),
+            "hora_inicio_descanso_prevista": hora_inicio_descanso_prevista.strip(),
+            "hora_fin_descanso_prevista": hora_fin_descanso_prevista.strip(),
         }
 
         workbook = load_workbook(self.filename)
@@ -144,7 +249,7 @@ class ExcelManager:
                 celda = sheet.cell(nueva_fila, columna)
                 if header in registro:
                     celda.value = registro[header]
-                elif celda.value is None and nueva_fila > 2:
+                elif header in ("diferencia_min", "cumplimiento") and celda.value is None and nueva_fila > 2:
                     anterior = sheet.cell(nueva_fila - 1, columna)
                     if anterior.data_type == "f":
                         celda.value = Translator(
@@ -156,6 +261,7 @@ class ExcelManager:
                     tabla.ref = f"A1:{get_column_letter(fin_col)}{max(fin_fila, nueva_fila)}"
                     if tabla.autoFilter is not None:
                         tabla.autoFilter.ref = tabla.ref
+            self._actualizar_jornadas(sheet)
             workbook.save(self.filename)
         finally:
             workbook.close()
@@ -315,7 +421,12 @@ class ExcelManager:
 
     def consultar_horario_departamento(self, departamento):
         """Lee el horario actual del departamento, sin modificar el libro."""
-        vacio = {"hora_inicio_prevista": "", "hora_fin_prevista": ""}
+        vacio = {
+            "hora_inicio_prevista": "",
+            "hora_fin_prevista": "",
+            "hora_inicio_descanso_prevista": "",
+            "hora_fin_descanso_prevista": "",
+        }
         if not departamento.strip():
             return vacio
         workbook = load_workbook(self.filename, read_only=True, data_only=True)
@@ -330,12 +441,26 @@ class ExcelManager:
             dept = columna("departamento", "departamentos")
             inicio = columna("hora entrada", "hora_inicio_prevista", "hora inicio prevista")
             fin = columna("hora salida", "hora_fin_prevista", "hora final prevista", "hora fin prevista")
+            inicio_descanso = columna("inicio previsto descanso", "hora_inicio_descanso_prevista")
+            fin_descanso = columna("fin previsto descanso", "hora_fin_descanso_prevista")
             if any(i is None for i in (dept, inicio, fin)):
                 raise ValueError("La hoja Departamentos debe incluir Departamento, Hora entrada y Hora salida.")
             for row in rows:
                 if str(row[dept] or "").strip().casefold() == departamento.strip().casefold():
-                    return {"hora_inicio_prevista": self._hora_departamento(row[inicio]),
-                            "hora_fin_prevista": self._hora_departamento(row[fin])}
+                    horario = {
+                        "hora_inicio_prevista": self._hora_departamento(row[inicio]),
+                        "hora_fin_prevista": self._hora_departamento(row[fin]),
+                    }
+                    for campo, indice in (
+                        ("hora_inicio_descanso_prevista", inicio_descanso),
+                        ("hora_fin_descanso_prevista", fin_descanso),
+                    ):
+                        horario[campo] = (
+                            self._hora_departamento(row[indice])
+                            if indice is not None and row[indice] not in (None, "")
+                            else ""
+                        )
+                    return horario
             return vacio
         finally:
             workbook.close()

@@ -10,7 +10,7 @@ import ttkbootstrap as tb
 
 from dashboard import build_dashboard_data, dibujar_departamentos, dibujar_fichajes_por_dia
 from excel_manager import ExcelManager
-from employee_status import estado_empleado, clave_orden_fichaje
+from employee_status import estado_empleado, ordenar_fichajes, siguiente_fichaje
 from styles import TEMA, aplicar_estilos_widgets, configurar_estilos, configurar_estilos_panel
 
 
@@ -28,6 +28,30 @@ def texto_error(error):
 UI_DIR = Path(__file__).resolve().parent / "ui"
 UI_FILE = UI_DIR / "control_horarios.ui"
 IMAGES_DIR = UI_DIR.parent / "images"
+CAMPOS_HORARIO = (
+    "hora_inicio_prevista",
+    "hora_fin_prevista",
+    "hora_inicio_descanso_prevista",
+    "hora_fin_descanso_prevista",
+)
+ACCION_POR_CAMPO = dict(zip(CAMPOS_HORARIO, (
+    "Entrada a Turno",
+    "Salida de Turno",
+    "Inicio de Descanso",
+    "Fin de Descanso",
+)))
+ACCIONES_HISTORICO = {
+    "accion_entrada": "Entrada a Turno",
+    "accion_inicio_descanso": "Inicio de Descanso",
+    "accion_fin_descanso": "Fin de Descanso",
+    "accion_salida": "Salida de Turno",
+}
+COLUMNAS_HISTORICO = (
+    "id_registro", "id_empleado", "nombre_completo", "departamento",
+    "accion", "fecha", "hora", "hora_inicio_prevista",
+    "hora_fin_prevista", "hora_inicio_descanso_prevista",
+    "hora_fin_descanso_prevista", "observaciones",
+)
 
 
 class ConstructoresPygubu:
@@ -67,7 +91,7 @@ class ControlHorariosApp:
         self.ventana.title("Control de horarios")
         self._icono_ventana = tk.PhotoImage(file=str(IMAGES_DIR / "control_horarios.png"))
         self.ventana.iconphoto(True, self._icono_ventana)
-        self.ventana.geometry("1280x900")
+        self.ventana.geometry("1280x980")
         self.ventana.minsize(1000, 850)
 
         configurar_estilos(self.ventana)
@@ -97,19 +121,12 @@ class ControlHorariosApp:
         # Carga los departamentos desde Excel.
         departamentos = self.excel.consultar_departamentos()
 
-        if departamentos:
-            self.builder.get_object("departamento").configure(
-                values=departamentos
-            )
+        self.builder.get_object("departamento").configure(values=departamentos)
 
         # Copia las opciones de departamento y acción a los filtros del histórico.
-        for origen, destino in (
-            ("departamento", "filtro_departamento"),
-            ("accion", "filtro_accion"),
-        ):
-            self.builder.get_object(destino).configure(
-                values=self.builder.get_object(origen).cget("values")
-            )
+        self.builder.get_object("filtro_departamento").configure(
+            values=self.builder.get_object("departamento").cget("values")
+        )
 
         self._configurar_historico()
         self.configurar_panel()
@@ -158,11 +175,12 @@ class ControlHorariosApp:
 
         self.builder.get_object("observaciones").delete("1.0", tk.END)
         self.builder.get_object("departamento").set("")
-        self.builder.get_object("accion").set("Entrada a Turno")
+        self._accion = ""
         self._restablecer_horas()
+        self._activar_campo_horario(None)
         self._actualizar_badge_accion()
-        for nombre in ("id_empleado", "nombre_completo", "departamento", "accion",
-                       "hora_inicio_prevista", "hora_fin_prevista"):
+        for nombre in ("id_empleado", "nombre_completo", "departamento",
+                       *CAMPOS_HORARIO):
             self.builder.get_object(nombre).state(["!invalid"])
         self._empleado_autocompletado = ""
         self._mostrar_estado_empleado({"texto": "Sin fichaje", "color": "#94A3B8"})
@@ -173,8 +191,8 @@ class ControlHorariosApp:
 
         self.builder.get_object("buscar_empleado").delete(0, tk.END)
 
-        for nombre in ("filtro_departamento", "filtro_accion"):
-            self.builder.get_object(nombre).set("")
+        self.builder.get_object("filtro_departamento").set("")
+        self._seleccionar_todas_acciones()
 
         self.consultar_registros()
 
@@ -249,14 +267,18 @@ class ControlHorariosApp:
     # Conexión de la interfaz con Excel.
 
     def _configurar_registro(self):
-        """Conecta el badge visual del tipo de registro sin alterar el guardado."""
-        accion = self.builder.get_object("accion")
-        accion.set("Entrada a Turno")
-        accion.bind("<<ComboboxSelected>>", self._actualizar_badge_accion)
+        """Prepara los controles del flujo de fichaje."""
+        self._accion = ""
+        for campo in CAMPOS_HORARIO:
+            boton = self.builder.get_object(campo.replace("hora_", "boton_"))
+            boton.configure(
+                command=lambda nombre=campo: self._seleccionar_horario(nombre)
+            )
         self._icono_entrada = tk.PhotoImage(file=str(IMAGES_DIR / "entrada.png"))
         self._icono_salida = tk.PhotoImage(file=str(IMAGES_DIR / "salida.png"))
         self._actualizar_badge_accion()
         self._restablecer_horas()
+        self._activar_campo_horario(None)
         self.builder.get_object("departamento").bind(
             "<<ComboboxSelected>>", self._cargar_horario_departamento
         )
@@ -298,6 +320,9 @@ class ControlHorariosApp:
             registros = self.excel.consultar_registros() if empleado else []
         except (ValueError, OSError) as error:
             self._mostrar_estado_empleado({"texto": "No disponible", "color": "#D3323C"}, empleado)
+            self._accion = ""
+            self._activar_campo_horario(None)
+            self._actualizar_badge_accion()
             messagebox.showerror("Estado del empleado", texto_error(error), parent=self.ventana)
             return
         estado = estado_empleado(registros, empleado)
@@ -318,20 +343,51 @@ class ControlHorariosApp:
             nombre.insert(0, perfil.get("nombre_completo") or "")
             self.builder.get_object("departamento").set(perfil.get("departamento") or "")
             self._cargar_horario_departamento()
+        self._actualizar_flujo(registros, empleado)
+
+    def _actualizar_flujo(self, registros, empleado):
+        """Activa únicamente la etapa pendiente de la jornada del empleado."""
+        siguiente = siguiente_fichaje(registros, empleado) if empleado else None
+        self._accion = siguiente or ""
+        campo = next(
+            (nombre for nombre, accion in ACCION_POR_CAMPO.items() if accion == siguiente),
+            None,
+        )
+        self._activar_campo_horario(campo)
+        self._actualizar_badge_accion()
 
     def _cargar_horario_departamento(self, _evento=None):
         """Actualiza los Spinbox con el horario del departamento en Excel."""
-        for campo in ("hora_inicio_prevista", "hora_fin_prevista"):
-            self.builder.get_object(campo).set("")
         try:
+            for campo in CAMPOS_HORARIO:
+                self.builder.get_object(campo).set("")
             horario = self.excel.consultar_horario_departamento(
                 self.builder.get_object("departamento").get()
             )
+            for campo, valor in horario.items():
+                self.builder.get_object(campo).set(valor)
         except (ValueError, OSError) as error:
             messagebox.showerror("Horario del departamento", texto_error(error), parent=self.ventana)
+
+    def _activar_campo_horario(self, campo_activo):
+        """Habilita solo el siguiente movimiento permitido."""
+        for campo in CAMPOS_HORARIO:
+            disponible = campo == campo_activo
+            self.builder.get_object(campo).state(
+                ["!disabled"] if disponible else ["disabled"]
+            )
+            self.builder.get_object(campo.replace("hora_", "boton_")).state(
+                ["!disabled"] if disponible else ["disabled"]
+            )
+        self.builder.get_object("registrar_fichaje").state(
+            ["!disabled"] if campo_activo else ["disabled"]
+        )
+
+    def _seleccionar_horario(self, campo):
+        """Registra el movimiento del único botón habilitado."""
+        if ACCION_POR_CAMPO[campo] != self._accion:
             return
-        for campo, valor in horario.items():
-            self.builder.get_object(campo).set(valor)
+        self.guardar_registro()
 
     @staticmethod
     def _validar_edicion_hora(valor):
@@ -353,25 +409,31 @@ class ControlHorariosApp:
     def _restablecer_horas(self):
         """Configura un Spinbox HH:MM por campo, con pasos de un minuto."""
         valores = tuple(f"{h:02d}:{m:02d}" for h in range(24) for m in range(60))
-        for campo, valor in (("hora_inicio_prevista", "08:00"),
-                             ("hora_fin_prevista", "17:00")):
-            control = self.builder.get_object(campo)
-            control.configure(
-                values=valores, validate="key",
-                validatecommand=(control.register(self._validar_edicion_hora), "%P"),
-            )
-            control.set(valor)
+        anterior = getattr(self, "_cargando_horarios", False)
+        self._cargando_horarios = True
+        try:
+            for campo in CAMPOS_HORARIO:
+                control = self.builder.get_object(campo)
+                control.configure(
+                    values=valores, validate="key",
+                    validatecommand=(control.register(self._validar_edicion_hora), "%P"),
+                )
+                control.set("")
+        finally:
+            self._cargando_horarios = anterior
 
-    def _leer_hora(self, campo):
+    def _leer_hora(self, campo, *, opcional=False):
         valor = self.builder.get_object(campo).get()
+        if opcional and not valor:
+            return ""
         if len(valor) != 5 or not self._validar_edicion_hora(valor):
             self._marcar_campo_invalido(campo)
-            etiqueta = "inicio" if campo == "hora_inicio_prevista" else "fin"
+            etiqueta = "inicio" if "inicio" in campo else "fin"
             raise ValueError(f"Introduce la hora de {etiqueta} en formato HH:MM (00:00–23:59).")
         return valor
 
     def _actualizar_badge_accion(self, _evento=None):
-        """Colorea el resumen de entrada, salida o descanso según el combobox."""
+        """Colorea el siguiente movimiento permitido."""
         estilos = {
             "Entrada a Turno": (
                 "AccionEntrada", "➜", "ENTRADA", "Inicio de jornada"
@@ -387,8 +449,8 @@ class ControlHorariosApp:
             ),
         }
         prefijo, icono, titulo, subtitulo = estilos.get(
-            self.builder.get_object("accion").get(),
-            ("AccionNeutro", "●", "TIPO", "Selecciona un registro"),
+            self._accion,
+            ("AccionNeutro", "●", "SIN MOVIMIENTO", "Introduce un ID o espera al próximo día"),
         )
         self.builder.get_object("badge_accion").configure(style=f"{prefijo}.TFrame")
         imagen = {"AccionEntrada": self._icono_entrada,
@@ -415,14 +477,15 @@ class ControlHorariosApp:
             ("id_empleado", "Introduce el ID del empleado (por ejemplo, EMP-001)."),
             ("nombre_completo", "Introduce el nombre completo del empleado."),
             ("departamento", "Selecciona el departamento del empleado."),
-            ("accion", "Selecciona el tipo de registro."),
         )
-        for nombre in (*[c[0] for c in campos], "hora_inicio_prevista", "hora_fin_prevista"):
+        for nombre in (*[c[0] for c in campos], *CAMPOS_HORARIO):
             self.builder.get_object(nombre).state(["!invalid"])
         for nombre, mensaje in campos:
             if not self.builder.get_object(nombre).get().strip():
                 self._marcar_campo_invalido(nombre)
                 raise ValueError(mensaje)
+        if not self._accion:
+            raise ValueError("No hay un movimiento disponible para este empleado ahora.")
 
     def guardar_registro(self):
         """Recoge los campos y guarda el registro en Excel."""
@@ -435,15 +498,24 @@ class ControlHorariosApp:
             "observaciones",
             "hora_inicio_prevista",
             "hora_fin_prevista",
+            "hora_inicio_descanso_prevista",
+            "hora_fin_descanso_prevista",
         )
 
         try:
             self._validar_campos_obligatorios()
             datos = {
-                nombre: (self._leer_hora(nombre)
-                         if nombre in ("hora_inicio_prevista", "hora_fin_prevista")
+                nombre: (self._leer_hora(
+                            nombre,
+                            opcional=nombre in (
+                                "hora_inicio_descanso_prevista",
+                                "hora_fin_descanso_prevista",
+                            ),
+                         )
+                         if nombre in CAMPOS_HORARIO
                          else self.builder.get_object(nombre).get("1.0", "end-1c")
                          if nombre == "observaciones"
+                         else self._accion if nombre == "accion"
                          else self.builder.get_object(nombre).get())
                 for nombre in campos
             }
@@ -456,8 +528,7 @@ class ControlHorariosApp:
             )
             return
 
-        self.limpiar_formulario()
-
+        self.builder.get_object("observaciones").delete("1.0", tk.END)
         self._actualizar_estado_empleado(empleado=datos["id_empleado"], completar=False)
 
         self.actualizar_historico()
@@ -472,7 +543,6 @@ class ControlHorariosApp:
                 departamento=self.builder.get_object(
                     "filtro_departamento"
                 ).get(),
-                accion=self.builder.get_object("filtro_accion").get(),
             )
         except (ValueError, OSError) as error:
             messagebox.showerror(
@@ -482,21 +552,80 @@ class ControlHorariosApp:
             )
             return
 
-        # Los últimos fichajes aparecen primero. Los filtros reinician la página.
-        self._registros_historico = sorted(registros, key=clave_orden_fichaje, reverse=True)
+        if not self._filtro_todos.get():
+            seleccionadas = {
+                accion for nombre, accion in ACCIONES_HISTORICO.items()
+                if self._filtros_accion[nombre].get()
+            }
+            registros = [r for r in registros if r.get("accion") in seleccionadas]
+
+        # Conserva la columna elegida y ordena antes de paginar.
+        self._registros_historico = ordenar_fichajes(
+            registros, self._columna_orden, self._orden_descendente
+        )
         self._pagina_historico = 0
         self._mostrar_pagina_historico()
 
     def _configurar_historico(self):
+        self._filtro_todos = tk.BooleanVar(master=self.ventana, value=True)
+        self.builder.get_object("accion_todos").configure(
+            variable=self._filtro_todos, command=self._seleccionar_todas_acciones
+        )
+        self._filtros_accion = {}
+        for nombre in ACCIONES_HISTORICO:
+            variable = tk.BooleanVar(master=self.ventana, value=False)
+            self._filtros_accion[nombre] = variable
+            self.builder.get_object(nombre).configure(
+                variable=variable, command=self._seleccionar_accion
+            )
         self._registros_historico = []
         self._pagina_historico = 0
         self._registros_por_pagina = 20
+        self._columna_orden = "fecha"
+        self._orden_descendente = True
         tabla = self.builder.get_object("tabla_fichajes")
+        self._titulos_columnas = {}
+        for columna_ui, campo in zip(tabla["columns"], COLUMNAS_HISTORICO):
+            titulo = tabla.heading(columna_ui, "text")
+            self._titulos_columnas[campo] = (columna_ui, titulo)
+            tabla.heading(columna_ui, command=lambda nombre=campo: self.ordenar_historico(nombre))
+        self._mostrar_orden_historico()
         vertical = self.builder.get_object("scroll_vertical")
         horizontal = self.builder.get_object("scroll_horizontal")
         tabla.configure(yscrollcommand=vertical.set, xscrollcommand=horizontal.set)
         vertical.configure(command=tabla.yview)
         horizontal.configure(command=tabla.xview)
+
+    def ordenar_historico(self, columna):
+        """Alterna ascendente/descendente al pulsar un encabezado."""
+        if columna == self._columna_orden:
+            self._orden_descendente = not self._orden_descendente
+        else:
+            self._columna_orden = columna
+            self._orden_descendente = False
+        self._registros_historico = ordenar_fichajes(
+            self._registros_historico, self._columna_orden, self._orden_descendente
+        )
+        self._pagina_historico = 0
+        self._mostrar_orden_historico()
+        self._mostrar_pagina_historico()
+
+    def _mostrar_orden_historico(self):
+        tabla = self.builder.get_object("tabla_fichajes")
+        for campo, (columna_ui, titulo) in self._titulos_columnas.items():
+            flecha = " ↓" if self._orden_descendente else " ↑"
+            tabla.heading(columna_ui, text=titulo + flecha if campo == self._columna_orden else titulo)
+
+    def _seleccionar_todas_acciones(self):
+        """Todos muestra las cuatro acciones; las casillas individuales filtran."""
+        self._filtro_todos.set(True)
+        for variable in self._filtros_accion.values():
+            variable.set(False)
+
+    def _seleccionar_accion(self):
+        self._filtro_todos.set(False)
+        if not any(variable.get() for variable in self._filtros_accion.values()):
+            self._seleccionar_todas_acciones()
 
     def pagina_anterior(self):
         if self._pagina_historico > 0:
@@ -515,17 +644,12 @@ class ControlHorariosApp:
         self._pagina_historico = min(self._pagina_historico, paginas - 1)
         inicio = self._pagina_historico * self._registros_por_pagina
         fin = min(inicio + self._registros_por_pagina, total)
-        columnas = (
-            "id_registro", "id_empleado", "nombre_completo", "departamento",
-            "accion", "fecha", "hora", "hora_inicio_prevista",
-            "hora_fin_prevista", "observaciones",
-        )
         filas = tabla.get_children()
         if filas:
             tabla.delete(*filas)
         for registro in self._registros_historico[inicio:fin]:
             tabla.insert("", "end", values=[
-                registro.get(c) if registro.get(c) is not None else "" for c in columnas
+                registro.get(c) if registro.get(c) is not None else "" for c in COLUMNAS_HISTORICO
             ])
         tabla.yview_moveto(0)
         self.builder.get_object("total_registros").configure(

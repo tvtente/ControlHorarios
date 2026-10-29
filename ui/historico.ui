@@ -88,27 +88,62 @@
         </child>
         <child>
           <object class="ttk.Label" id="etiqueta_filtro_accion" named="True">
-            <property name="text">Acción</property>
+            <property name="text">Acciones</property>
             <layout manager="grid">
-              <property name="row">0</property>
-              <property name="column">4</property>
+              <property name="row">1</property>
+              <property name="column">0</property>
               <property name="sticky">w</property>
               <property name="padx">4 10</property>
-              <property name="pady">6</property>
+              <property name="pady">14 4</property>
             </layout>
           </object>
         </child>
         <child>
-          <object class="ttk.Combobox" id="filtro_accion" named="True">
-            <property name="width">22</property>
-            <property name="state">readonly</property>
+          <object class="ttk.Frame" id="filtros_acciones" named="True">
+            <property name="style">HistoricoFiltros.TFrame</property>
             <layout manager="grid">
-              <property name="row">0</property>
-              <property name="column">5</property>
-              <property name="sticky">ew</property>
-              <property name="padx">4</property>
-              <property name="pady">4</property>
+              <property name="row">1</property>
+              <property name="column">1</property>
+              <property name="columnspan">5</property>
+              <property name="sticky">w</property>
+              <property name="padx">4 0</property>
+              <property name="pady">14 4</property>
             </layout>
+            <child>
+              <object class="ttk.Checkbutton" id="accion_todos" named="True">
+                <property name="text">Todos</property>
+                <property name="style">HistoricoTodos.TCheckbutton</property>
+                <layout manager="grid"><property name="column">0</property><property name="row">0</property><property name="padx">0 4</property></layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Checkbutton" id="accion_entrada" named="True">
+                <property name="text">Entrada</property>
+                <property name="style">HistoricoEntrada.TCheckbutton</property>
+                <layout manager="grid"><property name="column">1</property><property name="row">0</property><property name="padx">0 4</property></layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Checkbutton" id="accion_inicio_descanso" named="True">
+                <property name="text">Inicio descanso</property>
+                <property name="style">HistoricoDescanso.TCheckbutton</property>
+                <layout manager="grid"><property name="column">2</property><property name="row">0</property><property name="padx">0 4</property></layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Checkbutton" id="accion_fin_descanso" named="True">
+                <property name="text">Fin descanso</property>
+                <property name="style">HistoricoDescanso.TCheckbutton</property>
+                <layout manager="grid"><property name="column">3</property><property name="row">0</property><property name="padx">0 4</property></layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Checkbutton" id="accion_salida" named="True">
+                <property name="text">Salida</property>
+                <property name="style">HistoricoSalida.TCheckbutton</property>
+                <layout manager="grid"><property name="column">4</property><property name="row">0</property></layout>
+              </object>
+            </child>
           </object>
         </child>
         <child>
@@ -117,7 +152,7 @@
             <property name="text">Aplicar filtros</property>
             <property name="style">primary.TButton</property>
             <layout manager="grid">
-              <property name="row">1</property>
+              <property name="row">2</property>
               <property name="column">4</property>
               <property name="sticky">ew</property>
               <property name="padx">5</property>
@@ -133,7 +168,7 @@
             <property name="text">Limpiar filtros</property>
             <property name="style">secondary.TButton</property>
             <layout manager="grid">
-              <property name="row">1</property>
+              <property name="row">2</property>
               <property name="column">5</property>
               <property name="sticky">ew</property>
               <property name="padx">5</property>
@@ -243,6 +278,24 @@
                 <property name="text">Fin previsto</property>
                 <property name="width">105</property>
                 <property name="minwidth">55</property>
+                <property name="stretch">true</property>
+                <property name="column_anchor">w</property>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Treeview.Column" id="inicio_descanso_previsto_col" named="True">
+                <property name="text">Inicio descanso</property>
+                <property name="width">120</property>
+                <property name="minwidth">80</property>
+                <property name="stretch">true</property>
+                <property name="column_anchor">w</property>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Treeview.Column" id="fin_descanso_previsto_col" named="True">
+                <property name="text">Fin descanso</property>
+                <property name="width">120</property>
+                <property name="minwidth">80</property>
                 <property name="stretch">true</property>
                 <property name="column_anchor">w</property>
               </object>
