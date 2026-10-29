@@ -44,20 +44,22 @@ La fecha y la hora del fichaje se toman del equipo automáticamente. Los campos 
 
 Si falta un dato o una hora no es válida, el formulario muestra un mensaje en español, marca el campo en rojo y sitúa allí el cursor. Si la secuencia de fichajes no es válida, se explica el motivo sin guardar el movimiento.
 
-El indicador junto al calendario muestra **En jornada**, **En descanso**, **Jornada finalizada** o **Sin fichaje hoy**. Un empleado cuyo primer fichaje sea futuro puede cargar sus datos, pero ese fichaje no activa su jornada antes de la hora indicada. También se contemplan turnos nocturnos con horario previsto que cruza la medianoche.
+El indicador junto al calendario muestra **En jornada**, **En descanso**, **Jornada finalizada** o **Sin fichaje hoy**. Al cambiar de día, la ventana actualiza el estado y vuelve a permitir una entrada nueva. Un empleado cuyo primer fichaje sea futuro puede cargar sus datos, pero ese fichaje no activa su jornada antes de la hora indicada. También se contemplan turnos nocturnos con horario previsto que cruza la medianoche.
 
 ## Histórico
 
-La pestaña **Histórico Excel** permite buscar por ID o nombre y filtrar por departamento y acción.
+La pestaña **Histórico Excel** permite buscar por ID o nombre y filtrar por departamento, acción y rango de fechas. **Desde** y **Hasta** aceptan `dd/mm/aaaa` o se eligen con el calendario; cualquiera de los dos puede quedar vacío. Los extremos del rango están incluidos y se combinan con los demás filtros.
 
-- Los fichajes se ordenan por fecha y hora, del más reciente al más antiguo.
-- Cada página muestra hasta **20 registros**. Usa **Anterior** y **Siguiente** para navegar.
+- Los fichajes aparecen inicialmente del más reciente al más antiguo. Pulsa cualquier encabezado para ordenar toda la lista; vuelve a pulsarlo para invertir el orden.
+- Cada página muestra hasta **20 registros**. Usa **Inicio**, **Anterior**, **Siguiente** y **Final** para navegar.
 - Las barras vertical y horizontal permiten recorrer las filas y columnas cuando no caben en pantalla.
 - **Aplicar filtros** inicia la consulta desde la primera página.
 - **Limpiar filtros** elimina las condiciones de búsqueda.
 - **Actualizar histórico** vuelve a leer el Excel con los filtros actuales.
 
 El pie indica el intervalo visible, el total de registros y la página actual. Consultar o filtrar no elimina datos.
+
+La tabla lee el resultado guardado en la columna de fórmula **horas_trabajadas** del Excel en las filas de salida; no vuelve a calcularlo en la interfaz. El cumplimiento utiliza los mismos colores de estado definidos en Excel. Observaciones queda como última columna.
 
 ## Panel de control
 
@@ -69,10 +71,10 @@ Al cambiar de pestaña se actualiza la vista seleccionada. Al regresar al regist
 
 El archivo utilizado es `data/control_horarios.xlsx`. Su ubicación se calcula desde la carpeta del proyecto, independientemente de la carpeta desde la que ejecutes la aplicación.
 
-| Hoja | Tabla | Contenido |
-| --- | --- | --- |
-| Registros | TablaRegistros | Fichajes, cuatro horas previstas contiguas, fórmulas de diferencia y cumplimiento, cuatro horas reales contiguas y horas trabajadas netas en la fila de salida. |
-| Departamentos | TablaDepartamentos | Departamento, hora de entrada, hora de salida, tolerancia en minutos, inicio y fin previstos del descanso. |
+| Hoja          | Tabla              | Contenido                                                                                                                                                        |
+| ------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Registros     | TablaRegistros     | Fichajes, cuatro horas previstas contiguas, fórmulas de diferencia y cumplimiento, cuatro horas reales contiguas y horas trabajadas netas en la fila de salida. |
+| Departamentos | TablaDepartamentos | Departamento, hora de entrada, hora de salida, tolerancia en minutos, inicio y fin previstos del descanso.                                                       |
 
 Conserva los encabezados: el programa los utiliza para identificar los campos. Las tablas permiten seleccionar columnas por su nombre y usar referencias como `TablaRegistros[hora]` en Excel. Al guardar un nuevo fichaje, la tabla se amplía y se conservan las fórmulas existentes.
 
@@ -80,26 +82,28 @@ La aplicación obtiene las horas previstas de la hoja **Departamentos**, sin mos
 
 En la fila de **Salida de Turno**, Excel calcula `horas_trabajadas = (salida_real - entrada_real) - (fin_descanso_real - inicio_descanso_real)`. Si no hay descanso registrado, descuenta cero; si falta la entrada o la salida, deja el resultado vacío. El resultado tiene formato de duración `[h]:mm`.
 
+Al guardar desde la aplicación se calcula y conserva también el valor de la fórmula para que el Histórico pueda leerlo inmediatamente. Excel recalcula la fórmula al abrir el libro. Si modificas horas manualmente en Excel, guarda el libro después de recalcular y pulsa **Actualizar histórico**.
+
 Guarda los cambios hechos en Excel para que la aplicación pueda leerlos. Evita guardar simultáneamente desde Excel y desde la aplicación. Las copias realizadas antes de sustituir los datos de prueba se encuentran en `data/backups/`.
 
 ## Datos de prueba para la presentación
 
-El conjunto de prueba contiene **76 fichajes**:
+El Excel actual contiene **118 fichajes**:
 
-- 50 fichajes de entrada y salida de jornadas distribuidas entre hoy y los 29 días anteriores.
-- 16 fichajes de inicio y fin de descanso correspondientes a ocho de esas jornadas.
-- Los 10 últimos son entradas para mañana a las 08:00 del departamento **Idiomas**.
+- 25 jornadas históricas de ejemplo con entrada, inicio y fin del descanso y salida, todas en orden cronológico.
+- Dos jornadas completas registradas manualmente que se conservaron al ajustar los ejemplos.
+- Diez entradas futuras a las 08:00 del departamento **Idiomas**, todavía sin descanso ni salida.
 - Los empleados de esas diez entradas van de `EMP-013` a `EMP-022`. Por ejemplo, `EMP-022` corresponde a **Hugo Serrano**.
 
-Los 76 registros ocupan cuatro páginas del histórico. La aplicación toma la fecha real del equipo para determinar el estado y los indicadores del día.
+Los 118 registros ocupan seis páginas del histórico. La aplicación toma la fecha real del equipo para determinar el estado y los indicadores del día.
 
-Para **sustituir los fichajes actuales** por un nuevo conjunto de 76 ejemplos:
+Para **sustituir los fichajes actuales** por un nuevo conjunto de 110 ejemplos:
 
 ```bash
 uv run python generar_datos_prueba.py
 ```
 
-Este comando guarda una copia anterior, conserva la hoja Departamentos y reemplaza los fichajes. Genera 66 registros de los últimos 30 días y 10 entradas para el día siguiente a su ejecución. Por tanto, ejecutarlo otro día cambia las fechas del conjunto de prueba.
+Este comando guarda una copia anterior, conserva la hoja Departamentos y reemplaza los fichajes. Genera 100 registros de 25 jornadas completas entre ayer y hace 30 días, más 10 entradas para el día siguiente a su ejecución. Por tanto, ejecutarlo otro día cambia las fechas del conjunto de prueba.
 
 ## Diseño de las pantallas
 

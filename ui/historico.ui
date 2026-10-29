@@ -147,6 +147,34 @@
           </object>
         </child>
         <child>
+          <object class="ttk.Label" id="etiqueta_fecha_desde" named="True">
+            <property name="text">Desde</property>
+            <layout manager="grid"><property name="row">2</property><property name="column">0</property><property name="sticky">w</property><property name="padx">4 10</property><property name="pady">7</property></layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Frame" id="marco_fecha_desde" named="True">
+            <layout manager="grid"><property name="row">2</property><property name="column">1</property><property name="sticky">ew</property><property name="padx">4</property><property name="pady">7</property></layout>
+            <containerlayout manager="grid"><property type="column" id="0" name="weight">1</property></containerlayout>
+            <child><object class="ttk.Entry" id="fecha_desde" named="True"><property name="width">12</property><layout manager="grid"><property name="row">0</property><property name="column">0</property><property name="sticky">ew</property></layout></object></child>
+            <child><object class="ttk.Button" id="calendario_desde" named="True"><property name="text">📅</property><property name="command" type="command" cbtype="simple">elegir_fecha_desde</property><layout manager="grid"><property name="row">0</property><property name="column">1</property><property name="padx">3 0</property></layout></object></child>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="etiqueta_fecha_hasta" named="True">
+            <property name="text">Hasta</property>
+            <layout manager="grid"><property name="row">2</property><property name="column">2</property><property name="sticky">w</property><property name="padx">4 10</property><property name="pady">7</property></layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Frame" id="marco_fecha_hasta" named="True">
+            <layout manager="grid"><property name="row">2</property><property name="column">3</property><property name="sticky">ew</property><property name="padx">4</property><property name="pady">7</property></layout>
+            <containerlayout manager="grid"><property type="column" id="0" name="weight">1</property></containerlayout>
+            <child><object class="ttk.Entry" id="fecha_hasta" named="True"><property name="width">12</property><layout manager="grid"><property name="row">0</property><property name="column">0</property><property name="sticky">ew</property></layout></object></child>
+            <child><object class="ttk.Button" id="calendario_hasta" named="True"><property name="text">📅</property><property name="command" type="command" cbtype="simple">elegir_fecha_hasta</property><layout manager="grid"><property name="row">0</property><property name="column">1</property><property name="padx">3 0</property></layout></object></child>
+          </object>
+        </child>
+        <child>
           <object class="ttk.Button" id="aplicar_filtros" named="True">
             <property name="command" type="command" cbtype="simple">consultar_registros</property>
             <property name="text">Aplicar filtros</property>
@@ -301,10 +329,28 @@
               </object>
             </child>
             <child>
+              <object class="ttk.Treeview.Column" id="horas_trabajadas_col" named="True">
+                <property name="text">Horas trabajadas</property>
+                <property name="width">135</property>
+                <property name="minwidth">115</property>
+                <property name="stretch">true</property>
+                <property name="column_anchor">w</property>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Treeview.Column" id="cumplimiento_col" named="True">
+                <property name="text">Cumplimiento</property>
+                <property name="width">175</property>
+                <property name="minwidth">145</property>
+                <property name="stretch">true</property>
+                <property name="column_anchor">w</property>
+              </object>
+            </child>
+            <child>
               <object class="ttk.Treeview.Column" id="observaciones_col" named="True">
                 <property name="text">Observaciones</property>
-                <property name="width">220</property>
-                <property name="minwidth">110</property>
+                <property name="width">280</property>
+                <property name="minwidth">180</property>
                 <property name="stretch">true</property>
                 <property name="column_anchor">w</property>
               </object>
@@ -363,7 +409,7 @@
             <property name="style">primary.TButton</property>
             <layout manager="grid">
               <property name="row">0</property>
-              <property name="column">4</property>
+              <property name="column">6</property>
               <property name="sticky">ew</property>
               <property name="padx">5</property>
               <property name="pady">7</property>
@@ -373,12 +419,24 @@
           </object>
         </child>
         <child>
+          <object class="ttk.Button" id="pagina_inicio" named="True">
+            <property name="text">« Inicio</property>
+            <property name="command" type="command" cbtype="simple">pagina_inicio</property>
+            <layout manager="grid">
+              <property name="row">0</property>
+              <property name="column">1</property>
+              <property name="padx">5</property>
+              <property name="pady">7</property>
+            </layout>
+          </object>
+        </child>
+        <child>
           <object class="ttk.Button" id="pagina_anterior" named="True">
             <property name="text">‹ Anterior</property>
             <property name="command" type="command" cbtype="simple">pagina_anterior</property>
             <layout manager="grid">
               <property name="row">0</property>
-              <property name="column">1</property>
+              <property name="column">2</property>
               <property name="padx">5</property>
               <property name="pady">7</property>
             </layout>
@@ -389,7 +447,7 @@
             <property name="text">Página 1 de 1</property>
             <layout manager="grid">
               <property name="row">0</property>
-              <property name="column">2</property>
+              <property name="column">3</property>
               <property name="padx">5</property>
               <property name="pady">7</property>
             </layout>
@@ -401,7 +459,19 @@
             <property name="command" type="command" cbtype="simple">pagina_siguiente</property>
             <layout manager="grid">
               <property name="row">0</property>
-              <property name="column">3</property>
+              <property name="column">4</property>
+              <property name="padx">5</property>
+              <property name="pady">7</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Button" id="pagina_final" named="True">
+            <property name="text">Final »</property>
+            <property name="command" type="command" cbtype="simple">pagina_final</property>
+            <layout manager="grid">
+              <property name="row">0</property>
+              <property name="column">5</property>
               <property name="padx">5</property>
               <property name="pady">7</property>
             </layout>

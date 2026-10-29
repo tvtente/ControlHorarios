@@ -15,6 +15,39 @@ def _fecha(valor):
         return None
 
 
+def interpretar_rango_fechas(desde="", hasta=""):
+    """Convierte fechas del filtro (dd/mm/aaaa) y comprueba el orden."""
+    def convertir(valor, etiqueta):
+        valor = valor.strip()
+        if not valor:
+            return None
+        try:
+            resultado = datetime.strptime(valor, "%d/%m/%Y").date()
+            if resultado.strftime("%d/%m/%Y") != valor:
+                raise ValueError
+            return resultado
+        except ValueError:
+            raise ValueError(f"{etiqueta}: escribe una fecha válida con formato dd/mm/aaaa.") from None
+
+    inicio = convertir(desde, "Desde")
+    fin = convertir(hasta, "Hasta")
+    if inicio and fin and inicio > fin:
+        raise ValueError("La fecha «Desde» no puede ser posterior a «Hasta».")
+    return inicio, fin
+
+
+def filtrar_fichajes_por_fecha(registros, desde=None, hasta=None):
+    """Incluye los extremos del rango y omite fechas ausentes o inválidas."""
+    if desde is None and hasta is None:
+        return registros
+    resultado = []
+    for registro in registros:
+        fecha = _fecha(registro.get("fecha"))
+        if fecha is not None and (desde is None or fecha >= desde) and (hasta is None or fecha <= hasta):
+            resultado.append(registro)
+    return resultado
+
+
 def _hora(valor):
     if isinstance(valor, datetime):
         return valor.time()
@@ -141,6 +174,12 @@ def ordenar_fichajes(registros, columna="fecha", descendente=True):
             return (fecha, hora) if fecha else None
         if columna == "hora" or columna.startswith("hora_"):
             return _hora(valor)
+        if columna == "horas_trabajadas":
+            try:
+                horas, minutos = str(valor).split(":", 1)
+                return int(horas) * 60 + int(minutos)
+            except (AttributeError, TypeError, ValueError):
+                return None
         if valor in (None, ""):
             return None
         texto = unicodedata.normalize("NFKD", str(valor).casefold())

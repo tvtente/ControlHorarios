@@ -1,16 +1,20 @@
 """Conecta la interfaz de Pygubu con el gestor de Excel."""
 
 from pathlib import Path
-from datetime import datetime
+from datetime import date, datetime
 import tkinter as tk
 from tkinter import messagebox, ttk
 
 import pygubu
 import ttkbootstrap as tb
+from ttkbootstrap.dialogs import DatePickerDialog
 
 from dashboard import build_dashboard_data, dibujar_departamentos, dibujar_fichajes_por_dia
 from excel_manager import ExcelManager
-from employee_status import estado_empleado, ordenar_fichajes, siguiente_fichaje
+from employee_status import (
+    estado_empleado, filtrar_fichajes_por_fecha, interpretar_rango_fechas,
+    ordenar_fichajes, siguiente_fichaje,
+)
 from styles import TEMA, aplicar_estilos_widgets, configurar_estilos, configurar_estilos_panel
 
 
@@ -50,8 +54,16 @@ COLUMNAS_HISTORICO = (
     "id_registro", "id_empleado", "nombre_completo", "departamento",
     "accion", "fecha", "hora", "hora_inicio_prevista",
     "hora_fin_prevista", "hora_inicio_descanso_prevista",
-    "hora_fin_descanso_prevista", "observaciones",
+    "hora_fin_descanso_prevista", "horas_trabajadas",
+    "cumplimiento", "observaciones",
 )
+COLORES_CUMPLIMIENTO = {
+    "A tiempo": "#006100",
+    "Cumple horario": "#006100",
+    "Tarde": "#9C0006",
+    "Salida anticipada": "#9C6500",
+    "No aplica": "#44546A",
+}
 
 
 class ConstructoresPygubu:
@@ -167,6 +179,7 @@ class ControlHorariosApp:
     def limpiar_formulario(self):
         """Vacía los campos del formulario de registro."""
 
+        self.builder.get_object("nombre_completo").state(["!readonly"])
         for nombre in (
             "id_empleado",
             "nombre_completo",
@@ -192,6 +205,10 @@ class ControlHorariosApp:
         self.builder.get_object("buscar_empleado").delete(0, tk.END)
 
         self.builder.get_object("filtro_departamento").set("")
+        for nombre in ("fecha_desde", "fecha_hasta"):
+            campo = self.builder.get_object(nombre)
+            campo.delete(0, tk.END)
+            campo.state(["!invalid"])
         self._seleccionar_todas_acciones()
 
         self.consultar_registros()
@@ -219,6 +236,8 @@ class ControlHorariosApp:
     def _actualizar_reloj(self):
         """Muestra fecha y hora locales sin volver a leer el Excel."""
         ahora = datetime.now()
+        fecha_anterior = getattr(self, "_fecha_reloj", ahora.date())
+        self._fecha_reloj = ahora.date()
         dias = ("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
         meses = ("enero", "febrero", "marzo", "abril", "mayo", "junio",
                  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre")
@@ -228,6 +247,9 @@ class ControlHorariosApp:
         self.builder.get_object("hora_panel").configure(text=hora)
         self.builder.get_object("fecha_registro").configure(text=fecha)
         self.builder.get_object("hora_registro").configure(text=hora)
+        if fecha_anterior != ahora.date():
+            self._actualizar_estado_empleado(completar=False)
+            self.actualizar_panel()
         self.ventana.after(1000, self._actualizar_reloj)
 
     def actualizar_panel(self, _evento=None):
@@ -328,8 +350,10 @@ class ControlHorariosApp:
         estado = estado_empleado(registros, empleado)
         self._mostrar_estado_empleado(estado, empleado)
         perfil = estado["empleado"]
+        nombre = self.builder.get_object("nombre_completo")
+        nombre.state(["!readonly"])
         if completar and not perfil and getattr(self, "_empleado_autocompletado", ""):
-            self.builder.get_object("nombre_completo").delete(0, tk.END)
+            nombre.delete(0, tk.END)
             self.builder.get_object("departamento").set("")
             self._cargar_horario_departamento()
             self._empleado_autocompletado = ""
@@ -338,11 +362,12 @@ class ControlHorariosApp:
             campo_id.delete(0, tk.END)
             campo_id.insert(0, perfil["id_empleado"])
             self._empleado_autocompletado = empleado
-            nombre = self.builder.get_object("nombre_completo")
             nombre.delete(0, tk.END)
             nombre.insert(0, perfil.get("nombre_completo") or "")
             self.builder.get_object("departamento").set(perfil.get("departamento") or "")
             self._cargar_horario_departamento()
+        if perfil:
+            nombre.state(["readonly"])
         self._actualizar_flujo(registros, empleado)
 
     def _actualizar_flujo(self, registros, empleado):
@@ -538,6 +563,12 @@ class ControlHorariosApp:
         """Consulta Excel y actualiza la tabla con los filtros actuales."""
 
         try:
+            for nombre in ("fecha_desde", "fecha_hasta"):
+                self.builder.get_object(nombre).state(["!invalid"])
+            desde, hasta = interpretar_rango_fechas(
+                self.builder.get_object("fecha_desde").get(),
+                self.builder.get_object("fecha_hasta").get(),
+            )
             registros = self.excel.consultar_registros(
                 empleado=self.builder.get_object("buscar_empleado").get(),
                 departamento=self.builder.get_object(
@@ -552,6 +583,8 @@ class ControlHorariosApp:
             )
             return
 
+        registros = filtrar_fichajes_por_fecha(registros, desde, hasta)
+
         if not self._filtro_todos.get():
             seleccionadas = {
                 accion for nombre, accion in ACCIONES_HISTORICO.items()
@@ -565,6 +598,24 @@ class ControlHorariosApp:
         )
         self._pagina_historico = 0
         self._mostrar_pagina_historico()
+
+    def _elegir_fecha_historico(self, nombre):
+        campo = self.builder.get_object(nombre)
+        try:
+            inicio = datetime.strptime(campo.get().strip(), "%d/%m/%Y").date()
+        except ValueError:
+            inicio = date.today()
+        dialogo = DatePickerDialog(parent=self.ventana, start_date=inicio, first_weekday=0)
+        if dialogo.date_selected:
+            campo.delete(0, tk.END)
+            campo.insert(0, dialogo.date_selected.strftime("%d/%m/%Y"))
+            campo.state(["!invalid"])
+
+    def elegir_fecha_desde(self):
+        self._elegir_fecha_historico("fecha_desde")
+
+    def elegir_fecha_hasta(self):
+        self._elegir_fecha_historico("fecha_hasta")
 
     def _configurar_historico(self):
         self._filtro_todos = tk.BooleanVar(master=self.ventana, value=True)
@@ -584,6 +635,8 @@ class ControlHorariosApp:
         self._columna_orden = "fecha"
         self._orden_descendente = True
         tabla = self.builder.get_object("tabla_fichajes")
+        for estado, color in COLORES_CUMPLIMIENTO.items():
+            tabla.tag_configure(estado, foreground=color)
         self._titulos_columnas = {}
         for columna_ui, campo in zip(tabla["columns"], COLUMNAS_HISTORICO):
             titulo = tabla.heading(columna_ui, "text")
@@ -632,10 +685,21 @@ class ControlHorariosApp:
             self._pagina_historico -= 1
             self._mostrar_pagina_historico()
 
+    def pagina_inicio(self):
+        """Vuelve a la primera página del histórico filtrado."""
+        self._pagina_historico = 0
+        self._mostrar_pagina_historico()
+
     def pagina_siguiente(self):
         if (self._pagina_historico + 1) * self._registros_por_pagina < len(self._registros_historico):
             self._pagina_historico += 1
             self._mostrar_pagina_historico()
+
+    def pagina_final(self):
+        """Salta a la última página del histórico filtrado."""
+        total = len(self._registros_historico)
+        self._pagina_historico = max(0, (total - 1) // self._registros_por_pagina)
+        self._mostrar_pagina_historico()
 
     def _mostrar_pagina_historico(self):
         tabla = self.builder.get_object("tabla_fichajes")
@@ -648,9 +712,15 @@ class ControlHorariosApp:
         if filas:
             tabla.delete(*filas)
         for registro in self._registros_historico[inicio:fin]:
-            tabla.insert("", "end", values=[
-                registro.get(c) if registro.get(c) is not None else "" for c in COLUMNAS_HISTORICO
-            ])
+            estado = registro.get("cumplimiento") or ""
+            valores = [
+                registro.get(c) if registro.get(c) is not None else ""
+                for c in COLUMNAS_HISTORICO
+            ]
+            if estado:
+                valores[-2] = "● " + estado
+            tabla.insert("", "end", values=valores,
+                         tags=(estado,) if estado in COLORES_CUMPLIMIENTO else ())
         tabla.yview_moveto(0)
         self.builder.get_object("total_registros").configure(
             text=f"{inicio + 1 if total else 0}–{fin} de {total} registros"
@@ -661,7 +731,13 @@ class ControlHorariosApp:
         self.builder.get_object("pagina_anterior").configure(
             state="normal" if self._pagina_historico > 0 else "disabled"
         )
+        self.builder.get_object("pagina_inicio").configure(
+            state="normal" if self._pagina_historico > 0 else "disabled"
+        )
         self.builder.get_object("pagina_siguiente").configure(
+            state="normal" if fin < total else "disabled"
+        )
+        self.builder.get_object("pagina_final").configure(
             state="normal" if fin < total else "disabled"
         )
 

@@ -32,7 +32,11 @@ class HorasTrabajadasTest(unittest.TestCase):
             libro.save(archivo)
             libro.close()
 
-            ExcelManager(archivo)
+            gestor = ExcelManager(archivo)
+            registros = gestor.consultar_registros()
+            self.assertEqual(len(registros), 4)
+            self.assertEqual(registros[-1]["horas_trabajadas"], "8:30")
+            self.assertEqual(registros[-1]["cumplimiento"], "Cumple horario")
             libro = load_workbook(archivo)
             hoja = libro["Registros"]
             self.assertEqual(
@@ -49,6 +53,13 @@ class HorasTrabajadasTest(unittest.TestCase):
             )
             self.assertIsNone(hoja["S4"].value)
             libro.close()
+            calculado = load_workbook(archivo, data_only=True)
+            self.assertEqual(calculado["Registros"]["S5"].value.total_seconds(), 8.5 * 3600)
+            calculado.close()
+
+            # El histórico toma el valor guardado por Excel, sin recalcular la duración.
+            gestor._guardar_cache_horas({"S5": 6 / 24})
+            self.assertEqual(gestor.consultar_registros()[-1]["horas_trabajadas"], "6:00")
 
 
 if __name__ == "__main__":

@@ -1,7 +1,13 @@
 from employee_status import validar_fichaje
 from pathlib import Path
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
+from decimal import Decimal, ROUND_HALF_UP
+import os
+import posixpath
 import re
+import tempfile
+import xml.etree.ElementTree as ET
+from zipfile import ZipFile
 from openpyxl import Workbook, load_workbook
 from openpyxl.formula.translate import Translator
 from openpyxl.utils.cell import get_column_letter, range_boundaries
@@ -97,7 +103,7 @@ class ExcelManager:
                                     celda.value = re.sub(rf"\bK{fila}\b", f"M{fila}", celda.value)
                     existing_headers = orden
 
-            self._actualizar_jornadas(sheet)
+            horas_cache = self._actualizar_jornadas(sheet)
 
             for tabla in sheet.tables.values():
                 inicio_col, inicio_fila, fin_col, fin_fila = range_boundaries(tabla.ref)
@@ -112,15 +118,19 @@ class ExcelManager:
                 if tabla.autoFilter is not None:
                     tabla.autoFilter.ref = tabla.ref
 
+            workbook.calculation.calcMode = "auto"
+            workbook.calculation.fullCalcOnLoad = True
             workbook.save(self.filename)
         finally:
             workbook.close()
+        self._guardar_cache_horas(horas_cache)
 
     @classmethod
     def _actualizar_jornadas(cls, sheet):
         """Deja las horas reales y el tiempo neto en la fila de salida."""
         columnas = {sheet.cell(1, col).value: col for col in range(1, sheet.max_column + 1)}
         jornadas = {}
+        horas_cache = {}
         for fila in range(2, sheet.max_row + 1):
             empleado = sheet.cell(fila, columnas["id_empleado"]).value
             fecha = sheet.cell(fila, columnas["fecha"]).value
@@ -158,7 +168,60 @@ class ExcelManager:
                 f'MOD({fin}-{inicio},1)))'
             )
             resultado.number_format = "[h]:mm"
+            entrada_seg = cls._segundos_hora(jornada.get("entrada_real"))
+            salida_seg = cls._segundos_hora(jornada.get("salida_real"))
+            inicio_seg = cls._segundos_hora(jornada.get("inicio_descanso_real"))
+            fin_seg = cls._segundos_hora(jornada.get("fin_descanso_real"))
+            if entrada_seg is not None and salida_seg is not None:
+                descanso = ((fin_seg - inicio_seg) % 86400
+                            if inicio_seg is not None and fin_seg is not None else 0)
+                neto = (salida_seg - entrada_seg) % 86400 - descanso
+                if neto >= 0:
+                    horas_cache[resultado.coordinate] = neto / 86400
             jornadas.pop(clave, None)
+        return horas_cache
+
+    def _guardar_cache_horas(self, horas_cache):
+        """Conserva el resultado numérico de las fórmulas para lecturas data_only."""
+        if not horas_cache:
+            return
+        with ZipFile(self.filename) as origen:
+            ns = {"x": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
+                  "r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships"}
+            libro = ET.fromstring(origen.read("xl/workbook.xml"))
+            hoja = next(s for s in libro.findall("x:sheets/x:sheet", ns)
+                         if s.attrib.get("name") == "Registros")
+            relacion = hoja.attrib[f"{{{ns['r']}}}id"]
+            relaciones = ET.fromstring(origen.read("xl/_rels/workbook.xml.rels"))
+            destino = next(r.attrib["Target"] for r in relaciones
+                           if r.attrib.get("Id") == relacion)
+            ruta_hoja = (destino.lstrip("/") if destino.startswith("/")
+                         else posixpath.normpath(posixpath.join("xl", destino)))
+            contenido = origen.read(ruta_hoja)
+            for coordenada, valor in horas_cache.items():
+                patron = re.compile(
+                    rb'(<c\b[^>]*\br="' + coordenada.encode() +
+                    rb'"[^>]*>\s*<f(?:\s[^>]*)?>.*?</f>\s*)<v(?:\s*/>|>.*?</v>)'
+                )
+                contenido, encontrados = patron.subn(
+                    lambda m: m.group(1) + b"<v>" + format(valor, ".17g").encode() + b"</v>",
+                    contenido, count=1,
+                )
+                if encontrados != 1:
+                    raise ValueError(f"No se pudo conservar el cálculo de {coordenada} en Excel.")
+            descriptor, temporal = tempfile.mkstemp(suffix=".xlsx", dir=self.filename.parent)
+            os.close(descriptor)
+            try:
+                with ZipFile(temporal, "w") as destino_zip:
+                    for info in origen.infolist():
+                        destino_zip.writestr(
+                            info, contenido if info.filename == ruta_hoja else origen.read(info.filename)
+                        )
+                os.chmod(temporal, self.filename.stat().st_mode)
+                os.replace(temporal, self.filename)
+            finally:
+                if os.path.exists(temporal):
+                    os.unlink(temporal)
 
     # Valida los campos obligatorios y añade el fichaje.
     def guardar_registro(
@@ -261,10 +324,13 @@ class ExcelManager:
                     tabla.ref = f"A1:{get_column_letter(fin_col)}{max(fin_fila, nueva_fila)}"
                     if tabla.autoFilter is not None:
                         tabla.autoFilter.ref = tabla.ref
-            self._actualizar_jornadas(sheet)
+            horas_cache = self._actualizar_jornadas(sheet)
+            workbook.calculation.calcMode = "auto"
+            workbook.calculation.fullCalcOnLoad = True
             workbook.save(self.filename)
         finally:
             workbook.close()
+        self._guardar_cache_horas(horas_cache)
 
         return registro
 
@@ -273,6 +339,11 @@ class ExcelManager:
         self, empleado="", departamento="", accion=""
     ):
         workbook = load_workbook(self.filename, read_only=True)
+        try:
+            resultados = load_workbook(self.filename, read_only=True, data_only=True)
+        except Exception:
+            workbook.close()
+            raise
 
         try:
             sheet = workbook["Registros"]
@@ -286,24 +357,28 @@ class ExcelManager:
                 indice for indice, nombre in enumerate(headers)
                 if nombre in self.HEADERS[:8]
             ]
-            registros = [
-                dict(zip(headers, row))
-                for row in rows
-                if any(
-                    indice < len(row) and row[indice] not in (None, "")
-                    for indice in columnas_datos
-                )
-            ]
+            filas_calculadas = resultados["Registros"].iter_rows(values_only=True)
+            next(filas_calculadas, None)
+            columna_horas = headers.index("horas_trabajadas")
+            registros = []
+            for row, calculada in zip(rows, filas_calculadas):
+                if not any(indice < len(row) and row[indice] not in (None, "")
+                           for indice in columnas_datos):
+                    continue
+                registro = dict(zip(headers, row))
+                valor_excel = calculada[columna_horas] if columna_horas < len(calculada) else None
+                registro["horas_trabajadas"] = self._formatear_duracion(valor_excel)
+                registros.append(registro)
 
             # openpyxl no calcula fórmulas. Resolver la búsqueda de horarios
             # utilizada por este libro sin alterar las fórmulas del archivo.
             horarios = {}
             if "Departamentos" in workbook.sheetnames:
                 for fila in workbook["Departamentos"].iter_rows(
-                    min_row=2, max_row=100, max_col=3, values_only=True
+                    min_row=2, max_row=100, max_col=4, values_only=True
                 ):
                     if fila[0] is not None:
-                        horarios.setdefault(str(fila[0]).casefold(), fila[1:3])
+                        horarios.setdefault(str(fila[0]).casefold(), fila[1:4])
 
             for registro in registros:
                 for indice, campo in enumerate(
@@ -319,7 +394,7 @@ class ExcelManager:
                         if re.fullmatch(patron, valor, flags=re.IGNORECASE):
                             horario = horarios.get(
                                 str(registro.get("departamento") or "").casefold(),
-                                (None, None),
+                                (None, None, 0),
                             )
                             valor = horario[indice]
                         else:
@@ -331,6 +406,10 @@ class ExcelManager:
                         segundos = round(valor * 86400) % 86400
                         valor = f"{segundos // 3600:02d}:{segundos % 3600 // 60:02d}"
                     registro[campo] = valor
+
+                nombre_departamento = str(registro.get("departamento") or "").casefold()
+                tolerancia = horarios.get(nombre_departamento, (None, None, 0))[2]
+                self._calcular_resumen(registro, tolerancia)
 
             if empleado.strip():
                 termino = empleado.strip().lower()
@@ -358,6 +437,69 @@ class ExcelManager:
 
         finally:
             workbook.close()
+            resultados.close()
+
+    @staticmethod
+    def _formatear_duracion(valor):
+        """Lee el resultado calculado en Excel, sin evaluar su fórmula en Python."""
+        if isinstance(valor, timedelta):
+            segundos = valor.total_seconds()
+        elif isinstance(valor, (int, float)) and not isinstance(valor, bool):
+            segundos = valor * 86400
+        else:
+            return ""
+        if segundos < 0:
+            return ""
+        minutos = round(segundos) // 60
+        return f"{minutos // 60}:{minutos % 60:02d}"
+
+    @staticmethod
+    def _segundos_hora(valor):
+        """Convierte una hora del Excel a segundos desde medianoche."""
+        if isinstance(valor, datetime):
+            valor = valor.time()
+        if isinstance(valor, time):
+            return valor.hour * 3600 + valor.minute * 60 + valor.second
+        if isinstance(valor, (int, float)) and 0 <= valor < 1:
+            return round(valor * 86400)
+        if isinstance(valor, str):
+            try:
+                hora = time.fromisoformat(valor.strip())
+                return hora.hour * 3600 + hora.minute * 60 + hora.second
+            except ValueError:
+                pass
+        return None
+
+    @classmethod
+    def _calcular_resumen(cls, registro, tolerancia):
+        """Presenta en la interfaz el resultado de las fórmulas del Excel."""
+        accion = str(registro.get("accion") or "")
+        actual = cls._segundos_hora(registro.get("hora"))
+        previsto = cls._segundos_hora(registro.get(
+            "hora_inicio_prevista" if accion == "Entrada a Turno" else "hora_fin_prevista"
+        ))
+        if accion in ("Entrada a Turno", "Salida de Turno") and actual is not None and previsto is not None:
+            diferencia = (actual - previsto) / 60
+            if diferencia < -720:
+                diferencia += 1440
+            elif diferencia > 720:
+                diferencia -= 1440
+            diferencia = int(Decimal(str(diferencia)).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+            registro["diferencia_min"] = diferencia
+            try:
+                margen = float(tolerancia or 0)
+            except (TypeError, ValueError):
+                margen = 0
+            registro["cumplimiento"] = (
+                "A tiempo" if diferencia <= margen else "Tarde"
+            ) if accion == "Entrada a Turno" else (
+                "Cumple horario" if diferencia >= -margen else "Salida anticipada"
+            )
+        elif accion in ("Inicio de Descanso", "Fin de Descanso"):
+            registro["cumplimiento"] = "No aplica"
+        else:
+            registro["cumplimiento"] = ""
+
 
     def consultar_departamentos(self):
         """Devuelve los departamentos de la hoja Departamentos de Excel."""

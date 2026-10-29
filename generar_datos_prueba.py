@@ -36,30 +36,27 @@ def generar(archivo=ARCHIVO):
     ahora = datetime.now().replace(microsecond=0)
     hoy = ahora.date()
     registros = []
-    # 25 jornadas completas distribuidas entre hoy y hace 29 días.
+    # 25 jornadas completas distribuidas entre ayer y hace 30 días.
     for i in range(25):
-        dia = hoy - timedelta(days=29 - round(i * 29 / 24))
+        dia = hoy - timedelta(days=30 - round(i * 29 / 24))
         nombre, departamento, _ = EMPLEADOS[i % len(EMPLEADOS)]
         horario = horarios[departamento]
         entrada = datetime.combine(dia, datetime.strptime(horario['hora_inicio_prevista'], '%H:%M').time())
         salida = datetime.combine(dia, datetime.strptime(horario['hora_fin_prevista'], '%H:%M').time())
         entrada += timedelta(minutes=(0, 5, -3, 12, 0)[i % 5])
         salida += timedelta(minutes=(0, 10, -5)[i % 3])
-        if dia == hoy:
-            salida = min(salida, ahora - timedelta(minutes=5))
-            entrada = min(entrada, salida - timedelta(hours=1))
-        movimientos = [('Entrada a Turno', entrada), ('Salida de Turno', salida)]
-        if dia < hoy and i % 3 == 0:
-            descanso_inicio = datetime.combine(
-                dia, datetime.strptime(horario['hora_inicio_descanso_prevista'], '%H:%M').time()
-            )
-            descanso_fin = datetime.combine(
-                dia, datetime.strptime(horario['hora_fin_descanso_prevista'], '%H:%M').time()
-            )
-            movimientos.extend([
-                ('Inicio de Descanso', descanso_inicio),
-                ('Fin de Descanso', descanso_fin),
-            ])
+        descanso_inicio = datetime.combine(
+            dia, datetime.strptime(horario['hora_inicio_descanso_prevista'], '%H:%M').time()
+        )
+        descanso_fin = datetime.combine(
+            dia, datetime.strptime(horario['hora_fin_descanso_prevista'], '%H:%M').time()
+        )
+        movimientos = [
+            ('Entrada a Turno', entrada),
+            ('Inicio de Descanso', descanso_inicio),
+            ('Fin de Descanso', descanso_fin),
+            ('Salida de Turno', salida),
+        ]
         for accion, momento in movimientos:
             registros.append(dict(
                 id_empleado=f'EMP-{i % len(EMPLEADOS) + 1:03d}', nombre_completo=nombre,
@@ -81,7 +78,7 @@ def generar(archivo=ARCHIVO):
             **horario_idiomas,
         ))
     registros.sort(key=lambda r: (r['fecha'], r['hora'], r['id_empleado']))
-    assert len(registros) == 76
+    assert len(registros) == 110
     backup = archivo.parent / 'backups' / f'{archivo.stem}_antes_pruebas60_{ahora:%Y%m%d_%H%M%S}.xlsx'
     backup.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(archivo, backup)
@@ -110,6 +107,7 @@ def generar(archivo=ARCHIVO):
         libro.save(archivo)
     finally:
         libro.close()
+    ExcelManager(archivo)
     return len(registros)
 
 

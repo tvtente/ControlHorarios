@@ -32,6 +32,15 @@ class OrdenHistoricoTest(unittest.TestCase):
             [10, 3, 2],
         )
 
+    def test_horas_trabajadas_se_ordenan_como_duracion(self):
+        self.registros[0]["horas_trabajadas"] = "10:00"
+        self.registros[1]["horas_trabajadas"] = "8:30"
+        self.registros[2]["horas_trabajadas"] = "7:45"
+        self.assertEqual(
+            [r["id_registro"] for r in ordenar_fichajes(self.registros, "horas_trabajadas", False)],
+            [3, 2, 10],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
