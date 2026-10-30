@@ -111,6 +111,7 @@
             </layout>
             <child>
               <object class="ttk.Checkbutton" id="accion_todos" named="True">
+                <property name="command" type="command" cbtype="simple">_seleccionar_todas_acciones</property>
                 <property name="text">Todos</property>
                 <property name="style">HistoricoTodos.TCheckbutton</property>
                 <layout manager="grid"><property name="column">0</property><property name="row">0</property><property name="padx">0 4</property></layout>
@@ -118,6 +119,7 @@
             </child>
             <child>
               <object class="ttk.Checkbutton" id="accion_entrada" named="True">
+                <property name="command" type="command" cbtype="simple">_seleccionar_accion</property>
                 <property name="text">Entrada</property>
                 <property name="style">HistoricoEntrada.TCheckbutton</property>
                 <layout manager="grid"><property name="column">1</property><property name="row">0</property><property name="padx">0 4</property></layout>
@@ -125,6 +127,7 @@
             </child>
             <child>
               <object class="ttk.Checkbutton" id="accion_inicio_descanso" named="True">
+                <property name="command" type="command" cbtype="simple">_seleccionar_accion</property>
                 <property name="text">Inicio descanso</property>
                 <property name="style">HistoricoDescanso.TCheckbutton</property>
                 <layout manager="grid"><property name="column">2</property><property name="row">0</property><property name="padx">0 4</property></layout>
@@ -132,6 +135,7 @@
             </child>
             <child>
               <object class="ttk.Checkbutton" id="accion_fin_descanso" named="True">
+                <property name="command" type="command" cbtype="simple">_seleccionar_accion</property>
                 <property name="text">Fin descanso</property>
                 <property name="style">HistoricoDescanso.TCheckbutton</property>
                 <layout manager="grid"><property name="column">3</property><property name="row">0</property><property name="padx">0 4</property></layout>
@@ -139,6 +143,7 @@
             </child>
             <child>
               <object class="ttk.Checkbutton" id="accion_salida" named="True">
+                <property name="command" type="command" cbtype="simple">_seleccionar_accion</property>
                 <property name="text">Salida</property>
                 <property name="style">HistoricoSalida.TCheckbutton</property>
                 <layout manager="grid"><property name="column">4</property><property name="row">0</property></layout>
@@ -222,8 +227,11 @@
         </containerlayout>
         <child>
           <object class="ttk.Treeview" id="tabla_fichajes" named="True">
+            <bind sequence="&lt;ButtonRelease-1&gt;" handler="_ordenar_historico_clic" add="" />
             <property name="show">headings</property>
             <property name="height">14</property>
+            <property name="yscrollcommand" type="command" cbtype="simple">_actualizar_scroll_vertical</property>
+            <property name="xscrollcommand" type="command" cbtype="simple">_actualizar_scroll_horizontal</property>
             <layout manager="grid">
               <property name="row">0</property>
               <property name="column">0</property>
@@ -360,6 +368,7 @@
         <child>
           <object class="ttk.Scrollbar" id="scroll_vertical" named="True">
             <property name="orient">vertical</property>
+            <property name="command" type="command" cbtype="simple">_desplazar_tabla_vertical</property>
             <layout manager="grid">
               <property name="row">0</property>
               <property name="column">1</property>
@@ -371,6 +380,7 @@
         <child>
           <object class="ttk.Scrollbar" id="scroll_horizontal" named="True">
             <property name="orient">horizontal</property>
+            <property name="command" type="command" cbtype="simple">_desplazar_tabla_horizontal</property>
             <layout manager="grid">
               <property name="row">1</property>
               <property name="column">0</property>

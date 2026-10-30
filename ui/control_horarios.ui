@@ -13,6 +13,7 @@
     </containerlayout>
     <child>
       <object class="ttk.Notebook" id="pestanas" named="True">
+        <bind sequence="&lt;&lt;NotebookTabChanged&gt;&gt;" handler="_al_cambiar_pestana" add="" />
         <layout manager="grid">
           <property name="row">0</property>
           <property name="column">0</property>

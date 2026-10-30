@@ -146,9 +146,6 @@ class ControlHorariosApp:
         self.builder.get_object("pie_archivo").configure(
             text=f"Archivo: data/{self.excel.filename.name}"
         )
-        self.builder.get_object("pestanas").bind(
-            "<<NotebookTabChanged>>", self._al_cambiar_pestana
-        )
 
     # Acciones de la interfaz gráfica.
 
@@ -225,11 +222,6 @@ class ControlHorariosApp:
 
         self._datos_panel = None
         self.builder.get_object("periodo_grafico").set("Últimos 7 días")
-        self.builder.get_object("periodo_grafico").bind(
-            "<<ComboboxSelected>>", self.actualizar_panel
-        )
-        for ident in ("grafico_dias", "grafico_departamentos"):
-            self.builder.get_object(ident).bind("<Configure>", self._dibujar_graficos)
         self.actualizar_panel()
         self._actualizar_reloj()
 
@@ -291,22 +283,12 @@ class ControlHorariosApp:
     def _configurar_registro(self):
         """Prepara los controles del flujo de fichaje."""
         self._accion = ""
-        for campo in CAMPOS_HORARIO:
-            boton = self.builder.get_object(campo.replace("hora_", "boton_"))
-            boton.configure(
-                command=lambda nombre=campo: self._seleccionar_horario(nombre)
-            )
         self._icono_entrada = tk.PhotoImage(file=str(IMAGES_DIR / "entrada.png"))
         self._icono_salida = tk.PhotoImage(file=str(IMAGES_DIR / "salida.png"))
         self._actualizar_badge_accion()
         self._restablecer_horas()
         self._activar_campo_horario(None)
-        self.builder.get_object("departamento").bind(
-            "<<ComboboxSelected>>", self._cargar_horario_departamento
-        )
         self._configurar_ayuda_id()
-        self.builder.get_object("id_empleado").bind("<FocusOut>", self._actualizar_estado_empleado)
-        self.builder.get_object("id_empleado").bind("<Return>", self._actualizar_estado_empleado)
 
 
     def _configurar_ayuda_id(self):
@@ -316,9 +298,8 @@ class ControlHorariosApp:
         campo.configure(textvariable=self._valor_id)
         estilo = ttk.Style(self.ventana)
         estilo.configure("AyudaID.TLabel", background="#FFFFFF", foreground="#94A3B8")
-        self._ayuda_id = ttk.Label(campo, text="EMP-000", style="AyudaID.TLabel",
-                                  font=campo.cget("font"), takefocus=False)
-        self._ayuda_id.bind("<Button-1>", lambda _evento: campo.focus_set())
+        self._ayuda_id = self.builder.get_object("ayuda_id")
+        self._ayuda_id.configure(font=campo.cget("font"), takefocus=False)
         def actualizar(*_args):
             if self._valor_id.get():
                 self._ayuda_id.place_forget()
@@ -326,6 +307,9 @@ class ControlHorariosApp:
                 self._ayuda_id.place(x=12, rely=0.5, anchor="w")
         self._valor_id.trace_add("write", actualizar)
         actualizar()
+
+    def _enfocar_id_empleado(self, _evento=None):
+        self.builder.get_object("id_empleado").focus_set()
 
     def _mostrar_estado_empleado(self, estado, empleado=""):
         estilo = ttk.Style(self.ventana)
@@ -413,6 +397,18 @@ class ControlHorariosApp:
         if ACCION_POR_CAMPO[campo] != self._accion:
             return
         self.guardar_registro()
+
+    def registrar_entrada(self):
+        self._seleccionar_horario("hora_inicio_prevista")
+
+    def registrar_inicio_descanso(self):
+        self._seleccionar_horario("hora_inicio_descanso_prevista")
+
+    def registrar_fin_descanso(self):
+        self._seleccionar_horario("hora_fin_descanso_prevista")
+
+    def registrar_salida(self):
+        self._seleccionar_horario("hora_fin_prevista")
 
     @staticmethod
     def _validar_edicion_hora(valor):
@@ -620,14 +616,14 @@ class ControlHorariosApp:
     def _configurar_historico(self):
         self._filtro_todos = tk.BooleanVar(master=self.ventana, value=True)
         self.builder.get_object("accion_todos").configure(
-            variable=self._filtro_todos, command=self._seleccionar_todas_acciones
+            variable=self._filtro_todos
         )
         self._filtros_accion = {}
         for nombre in ACCIONES_HISTORICO:
             variable = tk.BooleanVar(master=self.ventana, value=False)
             self._filtros_accion[nombre] = variable
             self.builder.get_object(nombre).configure(
-                variable=variable, command=self._seleccionar_accion
+                variable=variable
             )
         self._registros_historico = []
         self._pagina_historico = 0
@@ -641,13 +637,30 @@ class ControlHorariosApp:
         for columna_ui, campo in zip(tabla["columns"], COLUMNAS_HISTORICO):
             titulo = tabla.heading(columna_ui, "text")
             self._titulos_columnas[campo] = (columna_ui, titulo)
-            tabla.heading(columna_ui, command=lambda nombre=campo: self.ordenar_historico(nombre))
         self._mostrar_orden_historico()
-        vertical = self.builder.get_object("scroll_vertical")
-        horizontal = self.builder.get_object("scroll_horizontal")
-        tabla.configure(yscrollcommand=vertical.set, xscrollcommand=horizontal.set)
-        vertical.configure(command=tabla.yview)
-        horizontal.configure(command=tabla.xview)
+
+    def _actualizar_scroll_vertical(self, *args):
+        self.builder.get_object("scroll_vertical").set(*args)
+
+    def _actualizar_scroll_horizontal(self, *args):
+        self.builder.get_object("scroll_horizontal").set(*args)
+
+    def _desplazar_tabla_vertical(self, *args):
+        self.builder.get_object("tabla_fichajes").yview(*args)
+
+    def _desplazar_tabla_horizontal(self, *args):
+        self.builder.get_object("tabla_fichajes").xview(*args)
+
+    def _ordenar_historico_clic(self, evento):
+        """Ordena la columna cuyo encabezado se pulsó en la tabla."""
+        tabla = evento.widget
+        if tabla.identify_region(evento.x, evento.y) != "heading":
+            return
+        columna = tabla.identify_column(evento.x)
+        if columna.startswith("#") and columna[1:].isdigit():
+            indice = int(columna[1:]) - 1
+            if 0 <= indice < len(COLUMNAS_HISTORICO):
+                self.ordenar_historico(COLUMNAS_HISTORICO[indice])
 
     def ordenar_historico(self, columna):
         """Alterna ascendente/descendente al pulsar un encabezado."""

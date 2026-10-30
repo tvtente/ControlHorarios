@@ -1,9 +1,10 @@
 import ttkbootstrap as ttkb
 import tkinter as tk
-import openpyxl as pxl
-import datetime
 from tkinter import messagebox
 from pathlib import Path
+
+from repositorio_excel import RepositorioExcel
+from servicio_fichajes import ServicioFichajes
 
 RUTA = Path(__file__).resolve().parent
 NOMBRE_EXCEL = "control_horarios_viajes.xlsx"
@@ -23,262 +24,96 @@ TIPOS_REGISTRO = [
     "Regreso de Pausa",
     "Salida de Turno"
 ]
-#Acciones posibles según el estado actual del empleado y el tipo de registro
-ACCIONES = {
-    "Fuera de turno": {
-        "Entrada a Turno": "Trabajando"
-    },
-    "Trabajando": {
-        "Salida a Pausa": "Pausa",
-        "Salida de Turno": "Fuera de turno"
-    },
-    "Pausa": {
-        "Regreso de Pausa": "Trabajando"
-    }
-}
-
-def inicializar_excel():
-    
-    if not Path(RUTA / NOMBRE_EXCEL).exists():
-        libro = pxl.Workbook()
-        hoja = libro.active
-        hoja.append(["ID", "Nombre", "Departamento", "Acción","Fecha","Hora", "Observaciones"])
-        libro.save(Path(RUTA / NOMBRE_EXCEL))
-        return libro, hoja
-    
-    libro = pxl.load_workbook(Path(RUTA / NOMBRE_EXCEL))
-    hoja = libro.active
-    return libro, hoja
-    
-
-def obtener_datos_formulario():
-    """Obtiene los datos ingresados en el formulario y los devuelve"""
-    id_empleado = entry_id_empleado.get().strip()
-    nombre_empleado = entry_nombre_empleado.get().strip()
-    departamento = entry_departamento.get().strip()
-    tipo_registro = entry_tipo_registro.get().strip()
-    observaciones = entry_observaciones.get().strip()
-    return id_empleado, nombre_empleado, departamento, tipo_registro, observaciones
 
 
-def guardar_fichaje_excel():
-    """Guarda el fichaje en el archivo Excel. 
-    Obtiene los datos del formulario, valida los campos obligatorios,
-    agrega un nuevo registro con la fecha y hora actuales, y actualiza el panel de control."""
-    
-    # Obtenemos los datos del formulario
-    id, nombre, departamento, tipo, observaciones = obtener_datos_formulario()
-    print(f"ID: {id}, Nombre: {nombre}, Departamento: {departamento}, Tipo: {tipo}, Observaciones: {observaciones}")
+class ControlHorariosApp:
+    """Coordina la interfaz con las reglas de fichaje y el repositorio Excel."""
 
-    # VALIDACIONES
-    if not validacion_campos(id, nombre, departamento, tipo):
-        return
-    
-    # Obtenemos la fecha y hora actuales
-    fecha_actual = datetime.date.today().strftime("%d-%m-%Y")
-    hora_actual = datetime.datetime.now().strftime("%H:%M:%S")
-    
-    # Creamos un nuevo registro con los datos obtenidos y la fecha y hora actuales
-    nuevo_registro = [id, nombre, departamento, tipo, fecha_actual, hora_actual, observaciones]
-    
-    #Guardamos el nuevo registro en el Excel si no hay errores previos
-    if not guardar_excel(nuevo_registro):
-        return
-    
-    #Mostramos un mensaje de éxito al usuario
-    messagebox.showinfo("Éxito", "Fichaje guardado correctamente.")
-    
-    #limpiamos los campos del formulario
-    limpiar_campos_formulario()
+    def __init__(self, repositorio=None, servicio=None):
+        self.repositorio = repositorio or RepositorioExcel(RUTA / NOMBRE_EXCEL)
+        self.servicio = servicio or ServicioFichajes()
 
-    #actualizamos el panel de control y el historico
-    actualizar_todo()
+    def conectar_interfaz(self, ventana, id_empleado, nombre_empleado, departamento,
+                          tipo_registro, observaciones, total_registros,
+                          registros_departamento, columnas_historico, tabla_historico):
+        self.ventana = ventana
+        self.entry_id_empleado = id_empleado
+        self.entry_nombre_empleado = nombre_empleado
+        self.entry_departamento = departamento
+        self.entry_tipo_registro = tipo_registro
+        self.entry_observaciones = observaciones
+        self.total_registros = total_registros
+        self.registros_departamento = registros_departamento
+        self.columnas_historico = columnas_historico
+        self.tabla_historico = tabla_historico
 
+    def obtener_datos_formulario(self):
+        return (
+            self.entry_id_empleado.get().strip(),
+            self.entry_nombre_empleado.get().strip(),
+            self.entry_departamento.get().strip(),
+            self.entry_tipo_registro.get().strip(),
+            self.entry_observaciones.get().strip(),
+        )
 
-def guardar_excel(registro):
-    """Controlamos el guardado del registro en el Excel y manejamos posibles errores."""
-    libro = None
-    try:
-        # Inicializamos el libro y la hoja de Excel, y agregamos el registro a la hoja y guardamos los cambios en el excel
-        libro, hoja = inicializar_excel()
-        hoja.append(registro)
-        libro.save(Path(RUTA / NOMBRE_EXCEL))
-        return True
-    
-    # Capturamos cualquier otro error que pueda ocurrir durante el guardado del Excel
-    except PermissionError:
-        print("Error: No se puede guardar el archivo de Excel. Está abierto en otro programa.")
-        messagebox.showerror("Error", "No se puede guardar el archivo de Excel. Está abierto en otro programa.")
-        return False
-    except Exception as e:
-        print(f"Error al guardar en el Excel: {e}")
-        messagebox.showerror("Error", f"Error al guardar en el Excel: {e}")
-        return False
-    finally:
-        if libro is not None:
-            #por ultimo cerramos el libro de Excel
-            libro.close()
+    def guardar_fichaje_excel(self):
+        try:
+            id, nombre, departamento, tipo, observaciones = self.obtener_datos_formulario()
+            registros = self.repositorio.obtener_registros_excel()
+            nuevo_registro = self.servicio.crear_registro(
+                id, nombre, departamento, tipo, observaciones, registros
+            )
+            self.repositorio.guardar_excel(nuevo_registro)
+        except (ValueError, OSError) as error:
+            messagebox.showerror("No se pudo guardar", str(error), parent=self.ventana)
+            return
+        messagebox.showinfo("Éxito", "Fichaje guardado correctamente.", parent=self.ventana)
+        self.limpiar_campos_formulario()
+        self.actualizar_todo()
 
-def validacion_campos(id, nombre, departamento, tipo_accion):
-    """Validamos todos los campos obligatorios uno por uno"""
-    if not id:
-        messagebox.showerror("Error", "El campo ID es obligatorio.")
-        return False
-    if not nombre:
-        messagebox.showerror("Error", "El campo Nombre es obligatorio.")
-        return False
-    if not departamento:
-        messagebox.showerror("Error", "El campo Departamento es obligatorio.")
-        return False
-    if not tipo_accion:
-        messagebox.showerror("Error", "El campo Tipo de Registro es obligatorio.")
-        return False
-    #Validamos si las acciones del empleado son coherentes con su estado actual.
-    registros = obtener_registros_excel()
-    # Si no se pudieron obtener los registros, no se puede validar la acción.
-    if registros is None:
-        return False
-    if not validar_id_empleado(id, nombre, departamento, registros):
-        return False
-    if not validar_accion(id, tipo_accion, registros):
-        return False
-    # TO DO validar los id del empleado con su nombre y departamento para no tener inconsistencias en los registros
+    def limpiar_campos_formulario(self):
+        self.entry_id_empleado.delete(0, "end")
+        self.entry_nombre_empleado.delete(0, "end")
+        self.entry_departamento.set(DEPARTAMENTOS[0])
+        self.entry_tipo_registro.set(TIPOS_REGISTRO[0])
+        self.entry_observaciones.delete(0, "end")
+        self.entry_id_empleado.focus_set()
 
-    return True
+    def obtener_registros_excel(self):
+        try:
+            return self.repositorio.obtener_registros_excel()
+        except (ValueError, OSError) as error:
+            messagebox.showerror("No se pudo leer Excel", str(error), parent=self.ventana)
+            return None
 
+    def actualizar_panel_control(self, registros=None):
+        if registros is None:
+            registros = self.obtener_registros_excel()
+        if registros is None:
+            return
+        self.total_registros.set(str(self.servicio.calcular_registros_hoy(registros)))
+        self.registros_departamento.set(str(self.servicio.calcular_departamentos(registros)))
 
-def obtener_estado_empleado(id_empleado, registros):
-    """Obtiene el estado actual del empleado según sus registros."""
-    # Inicializamos el estado como "Fuera de turno" y lo actualizamos según los registros del empleado.
-    estado = "Fuera de turno"
-    for registro in registros:
-        if str(registro[0].strip()) == str(id_empleado).strip():
-            accion = registro[3]
-            # Verificamos si la acción es válida para el estado actual y actualizamos el estado en consecuencia.
-            if estado in ACCIONES and accion in ACCIONES[estado]:
-                estado = ACCIONES[estado][accion]
-    return estado
+    def actualizar_historico(self, registros=None):
+        if registros is None:
+            registros = self.obtener_registros_excel()
+        if registros is None:
+            return
+        self.tabla_historico.build_table_data(coldata=self.columnas_historico, rowdata=registros)
+        self.tabla_historico.load_table_data()
 
-def validar_accion(id_empleado, accion, registros):
-    """Valida si la acción es válida para el estado actual del empleado."""
-    estado_actual = obtener_estado_empleado(id_empleado, registros)
-    # Verificamos si la acción es válida para el estado actual del empleado.
-    if estado_actual in ACCIONES and accion in ACCIONES[estado_actual]:
-        return True
-    # Si la acción no es válida, mostramos un mensaje de error y retornamos False.
-    messagebox.showerror("Error", f"La acción '{accion}' no es válida para el estado actual '{estado_actual}'.")
-    return False
+    def actualizar_todo(self):
+        registros = self.obtener_registros_excel()
+        if registros is None:
+            return
+        self.actualizar_panel_control(registros)
+        self.actualizar_historico(registros)
 
-def validar_id_empleado(id_empleado, nombre, departamento, registros):
-    """Valida si el ID del empleado coincide con su nombre y departamento en los registros."""
-    for registro in registros:
-        if str(registro[0]).strip() == str(id_empleado).strip(): #Buscamos si el ID del empleado ya existe en los registros
-            # Si encontramos el ID del empleado, verificamos que el nombre y departamento coincidan.
-            if registro[1].strip().casefold() != nombre.strip().casefold():
-                messagebox.showerror(
-                    "Nombre incorrecto",
-                    f"El ID '{id_empleado}' ya está asociado "
-                    f"a otro empleado y no coincide con el nombre '{nombre}'."
-                )
-                return False
-
-            if registro[2].strip() != departamento.strip():
-                messagebox.showerror(
-                    "Departamento incorrecto",
-                    f"El empleado con ID '{id_empleado}' "
-                    f"está registrado en otro departamento, "
-                    f"no en '{departamento}'."
-                )
-                return False
-    return True
-
-def limpiar_campos_formulario():
-    """Limpia los campos del formulario."""
-    entry_id_empleado.delete(0, "end")
-    entry_nombre_empleado.delete(0, "end")
-    entry_departamento.set(entry_departamento['values'][0])
-    entry_tipo_registro.set(entry_tipo_registro['values'][0])
-    entry_observaciones.delete(0, "end")
-    #Ponemos el foco en el campo ID del empleado para facilitar la entrada de datos
-    entry_id_empleado.focus_set()
-
-def obtener_registros_excel():
-    """Obtenemos todos los registros del Excel."""
-    libro = None
-    try:
-        libro, hoja = inicializar_excel()
-        registros = list(hoja.iter_rows(min_row=2, values_only=True))
-        libro.close()
-        return registros
-        
-    except Exception as e:
-        print(f"Error al obtener registros del Excel: {e}")
-        messagebox.showerror("Error", f"Error al obtener registros del Excel: {e}")
-        return None
-    finally:
-        if libro is not None:
-            libro.close()
-
-        
-def calcular_registros_hoy(registros):
-    """Calcula el total de empleados del día actual."""
-    # Inicializamos el contador de registros del día actual por departamento
-    fecha_actual = datetime.date.today().strftime("%d-%m-%Y")
-    empleados_hoy = set()
-    #print(f"Registros: {registros}  Fecha actual: {fecha_actual}")
-    for registro in registros:
-        if registro[4] == fecha_actual and registro[0] is not None:  #la fecha está en la columna 5 (índice 4)
-            empleados_hoy.add(registro[0])
-
-    return len(empleados_hoy)
-
-def calcular_departamentos(registros):
-    """Calcula el número de departamentos distintos en los registros del dia actual."""
-    fecha_actual = datetime.date.today().strftime("%d-%m-%Y")
-    departamentos = set()
-    
-    for registro in registros:
-        # Verificamos que la fecha sea la actual y que el campo de departamento no esté vacío
-        if registro[4] == fecha_actual and registro[2]:
-            departamentos.add(registro[2])
-    
-    return len(departamentos)
-    
-    
-def actualizar_panel_control(registros = None):
-    """Actualiza el panel de control con los registros proporcionados o los obtiene del Excel si no se proporcionan."""
-    if registros is None:
-        registros = obtener_registros_excel()
-  
-    if registros is None:
-        return
-  
-    total_hoy = calcular_registros_hoy(registros)
-    total_departamentos = calcular_departamentos(registros)
-    
-    total_registros.set(str(total_hoy))
-    registros_departamento.set(str(total_departamentos))
-    
-
-def actualizar_historico(registros = None):
-    """Actualiza el histórico con los registros proporcionados o los obtiene del Excel si no se proporcionan."""
-    if registros is None:
-        registros = obtener_registros_excel()
-    
-    if registros is None:
-        return
-    tabla_historico.build_table_data(coldata=columnas_historico, rowdata=registros)
-    tabla_historico.load_table_data()
-    print("Histórico actualizado.")
-    
-def actualizar_todo():
-    """Actualiza tanto el panel de control como el histórico."""
-    # Obtenemos los registros del Excel y actualizamos ambos paneles
-    registros = obtener_registros_excel()
-    if registros is None:
-        return
-    actualizar_panel_control(registros)
-    actualizar_historico(registros)
+controlador = ControlHorariosApp()
+guardar_fichaje_excel = controlador.guardar_fichaje_excel
+actualizar_panel_control = controlador.actualizar_panel_control
+actualizar_historico = controlador.actualizar_historico
+actualizar_todo = controlador.actualizar_todo
 
 
 #creamos la ventana principal de la aplicación
@@ -434,6 +269,13 @@ boton_actualizar_historico = ttkb.Button(frame_historico, text="Actualizar Hist�
                                          width=25)
 boton_actualizar_historico.grid(column=0, row=2, padx=5, pady=10)
 
+
+# Conecta los widgets creados con el controlador orientado a objetos.
+controlador.conectar_interfaz(
+    app, entry_id_empleado, entry_nombre_empleado, entry_departamento,
+    entry_tipo_registro, entry_observaciones, total_registros,
+    registros_departamento, columnas_historico, tabla_historico,
+)
 
 # Actualiza todos los paneles al iniciar la aplicación
 actualizar_todo()

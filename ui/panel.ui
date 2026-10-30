@@ -465,6 +465,7 @@
                 </child>
                 <child>
                   <object class="ttk.Combobox" id="periodo_grafico" named="True">
+                    <bind sequence="&lt;&lt;ComboboxSelected&gt;&gt;" handler="actualizar_panel" add="" />
                     <property name="state">readonly</property>
                     <property name="values">{Últimos 7 días} {Últimos 14 días} {Últimos 30 días}</property>
                     <property name="width">17</property>
@@ -481,6 +482,7 @@
             </child>
             <child>
               <object class="tk.Canvas" id="grafico_dias" named="True">
+                <bind sequence="&lt;Configure&gt;" handler="_dibujar_graficos" add="" />
                 <property name="height">310</property>
                 <property name="width">400</property>
                 <property name="background">#FFFFFF</property>
@@ -550,6 +552,7 @@
             </child>
             <child>
               <object class="tk.Canvas" id="grafico_departamentos" named="True">
+                <bind sequence="&lt;Configure&gt;" handler="_dibujar_graficos" add="" />
                 <property name="height">310</property>
                 <property name="width">400</property>
                 <property name="background">#FFFFFF</property>

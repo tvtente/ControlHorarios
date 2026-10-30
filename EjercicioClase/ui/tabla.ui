@@ -1,0 +1,155 @@
+<?xml version='1.0' encoding='utf-8'?>
+<interface version="1.5" author="PygubuDesigner">
+  <project>
+    <settings />
+    <customwidgets />
+    <resources />
+  </project>
+  <object class="ttk.Frame" id="pantalla_tabla" named="True">
+    <property name="padding">12</property>
+    <containerlayout manager="grid">
+      <property type="column" id="0" name="weight">1</property>
+      <property type="row" id="1" name="weight">1</property>
+    </containerlayout>
+    <child>
+      <object class="ttk.Frame" id="barra_busqueda" named="True">
+        <layout manager="grid">
+          <property name="row">0</property>
+          <property name="column">0</property>
+          <property name="sticky">ew</property>
+          <property name="pady">12 6</property>
+        </layout>
+        <containerlayout manager="grid">
+          <property type="column" id="1" name="weight">1</property>
+        </containerlayout>
+        <child>
+          <object class="ttk.Label" id="etiqueta_buscar" named="True">
+            <property name="text">Buscar:</property>
+            <layout manager="grid">
+              <property name="row">0</property>
+              <property name="column">0</property>
+              <property name="padx">0 8</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Entry" id="buscar" named="True">
+            <bind sequence="&lt;KeyRelease&gt;" handler="filtrar_tabla" add="" />
+            <layout manager="grid">
+              <property name="row">0</property>
+              <property name="column">1</property>
+              <property name="sticky">ew</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Button" id="eliminar" named="True">
+            <property name="text">Eliminar seleccionado</property>
+            <property name="command" type="command" cbtype="simple">eliminar_persona</property>
+            <layout manager="grid">
+              <property name="row">0</property>
+              <property name="column">2</property>
+              <property name="padx">8 0</property>
+            </layout>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Treeview" id="tabla" named="True">
+        <property name="show">headings</property>
+        <property name="height">8</property>
+        <bind sequence="&lt;&lt;TreeviewSelect&gt;&gt;" handler="seleccionar_persona" add="" />
+        <layout manager="grid">
+          <property name="row">1</property>
+          <property name="column">0</property>
+          <property name="sticky">nsew</property>
+        </layout>
+        <child>
+          <object class="ttk.Treeview.Column" id="col_id" named="True">
+            <property name="text">ID</property>
+            <property name="width">55</property>
+            <property name="column_anchor">w</property>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Treeview.Column" id="col_nombre" named="True">
+            <property name="text">Nombre</property>
+            <property name="width">180</property>
+            <property name="column_anchor">w</property>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Treeview.Column" id="col_categoria" named="True">
+            <property name="text">Categoría</property>
+            <property name="width">100</property>
+            <property name="column_anchor">w</property>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Treeview.Column" id="col_edad" named="True">
+            <property name="text">Edad</property>
+            <property name="width">65</property>
+            <property name="column_anchor">w</property>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Treeview.Column" id="col_turno" named="True">
+            <property name="text">Turno</property>
+            <property name="width">100</property>
+            <property name="column_anchor">w</property>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Treeview.Column" id="col_activo" named="True">
+            <property name="text">Activo</property>
+            <property name="width">75</property>
+            <property name="column_anchor">w</property>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Treeview.Column" id="col_notas" named="True">
+            <property name="text">Notas</property>
+            <property name="width">220</property>
+            <property name="column_anchor">w</property>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Frame" id="pie" named="True">
+        <layout manager="grid">
+          <property name="row">2</property>
+          <property name="column">0</property>
+          <property name="sticky">ew</property>
+          <property name="pady">10 0</property>
+        </layout>
+        <containerlayout manager="grid">
+          <property type="column" id="0" name="weight">1</property>
+        </containerlayout>
+        <child>
+          <object class="ttk.Label" id="estado" named="True">
+            <property name="text">0 personas registradas</property>
+            <property name="style">DemoEstado.TLabel</property>
+            <layout manager="grid">
+              <property name="row">0</property>
+              <property name="column">0</property>
+              <property name="sticky">w</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Progressbar" id="progreso" named="True">
+            <property name="maximum">10</property>
+            <property name="length">180</property>
+            <layout manager="grid">
+              <property name="row">0</property>
+              <property name="column">1</property>
+              <property name="sticky">e</property>
+            </layout>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>

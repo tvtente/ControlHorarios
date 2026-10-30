@@ -1,0 +1,239 @@
+<?xml version='1.0' encoding='utf-8'?>
+<interface version="1.5" author="PygubuDesigner">
+  <project>
+    <settings />
+    <customwidgets />
+    <resources />
+  </project>
+  <object class="ttk.Frame" id="pantalla_formulario" named="True">
+    <property name="padding">12</property>
+    <containerlayout manager="grid">
+      <property type="column" id="0" name="weight">1</property>
+    </containerlayout>
+    <child>
+      <object class="ttk.Label" id="imagen_animada" named="True">
+        <property name="image">../images/registro_animado.gif</property>
+        <bind sequence="&lt;Destroy&gt;" handler="detener_animacion" add="" />
+        <layout manager="grid">
+          <property name="row">0</property>
+          <property name="column">0</property>
+          <property name="sticky">ew</property>
+          <property name="pady">0 8</property>
+        </layout>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Label" id="titulo" named="True">
+        <property name="text">Laboratorio Pygubu · Registro de personas</property>
+        <property name="style">DemoTitulo.TLabel</property>
+        <layout manager="grid">
+          <property name="row">1</property>
+          <property name="column">0</property>
+          <property name="sticky">w</property>
+          <property name="pady">0 12</property>
+        </layout>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Labelframe" id="formulario" named="True">
+        <property name="text">Formulario</property>
+        <property name="padding">12</property>
+        <layout manager="grid">
+          <property name="row">2</property>
+          <property name="column">0</property>
+          <property name="sticky">ew</property>
+        </layout>
+        <containerlayout manager="grid">
+          <property type="column" id="1" name="weight">1</property>
+          <property type="column" id="3" name="weight">1</property>
+        </containerlayout>
+        <child>
+          <object class="ttk.Label" id="etiqueta_nombre" named="True">
+            <property name="text">Nombre *</property>
+            <layout manager="grid">
+              <property name="row">0</property>
+              <property name="column">0</property>
+              <property name="sticky">w</property>
+              <property name="padx">4</property>
+              <property name="pady">5</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Entry" id="nombre" named="True">
+            <layout manager="grid">
+              <property name="row">0</property>
+              <property name="column">1</property>
+              <property name="sticky">ew</property>
+              <property name="padx">4</property>
+              <property name="pady">5</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="etiqueta_categoria" named="True">
+            <property name="text">Categoría</property>
+            <layout manager="grid">
+              <property name="row">0</property>
+              <property name="column">2</property>
+              <property name="sticky">w</property>
+              <property name="padx">4</property>
+              <property name="pady">5</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Combobox" id="categoria" named="True">
+            <property name="values">{General} {VIP} {Prensa}</property>
+            <property name="state">readonly</property>
+            <bind sequence="&lt;&lt;ComboboxSelected&gt;&gt;" handler="cambio_categoria" add="" />
+            <layout manager="grid">
+              <property name="row">0</property>
+              <property name="column">3</property>
+              <property name="sticky">ew</property>
+              <property name="padx">4</property>
+              <property name="pady">5</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="etiqueta_edad" named="True">
+            <property name="text">Edad</property>
+            <layout manager="grid">
+              <property name="row">1</property>
+              <property name="column">0</property>
+              <property name="sticky">w</property>
+              <property name="padx">4</property>
+              <property name="pady">5</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Spinbox" id="edad" named="True">
+            <property name="from_">0</property>
+            <property name="to">120</property>
+            <property name="width">8</property>
+            <layout manager="grid">
+              <property name="row">1</property>
+              <property name="column">1</property>
+              <property name="sticky">w</property>
+              <property name="padx">4</property>
+              <property name="pady">5</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="etiqueta_turno" named="True">
+            <property name="text">Turno</property>
+            <layout manager="grid">
+              <property name="row">1</property>
+              <property name="column">2</property>
+              <property name="sticky">w</property>
+              <property name="padx">4</property>
+              <property name="pady">5</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Frame" id="opciones_turno" named="True">
+            <layout manager="grid">
+              <property name="row">1</property>
+              <property name="column">3</property>
+              <property name="sticky">w</property>
+              <property name="padx">4</property>
+              <property name="pady">5</property>
+            </layout>
+            <child>
+              <object class="ttk.Radiobutton" id="turno_manana" named="True">
+                <property name="text">Mañana</property>
+                <property name="value">Mañana</property>
+                <layout manager="pack">
+                  <property name="side">left</property>
+                  <property name="padx">0 12</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Radiobutton" id="turno_tarde" named="True">
+                <property name="text">Tarde</property>
+                <property name="value">Tarde</property>
+                <layout manager="pack">
+                  <property name="side">left</property>
+                </layout>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Checkbutton" id="activo" named="True">
+            <property name="text">Activo</property>
+            <layout manager="grid">
+              <property name="row">2</property>
+              <property name="column">1</property>
+              <property name="sticky">w</property>
+              <property name="padx">4</property>
+              <property name="pady">5</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="etiqueta_notas" named="True">
+            <property name="text">Notas</property>
+            <layout manager="grid">
+              <property name="row">3</property>
+              <property name="column">0</property>
+              <property name="sticky">nw</property>
+              <property name="padx">4</property>
+              <property name="pady">5</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="tk.Text" id="notas" named="True">
+            <property name="height">3</property>
+            <property name="width">30</property>
+            <layout manager="grid">
+              <property name="row">3</property>
+              <property name="column">1</property>
+              <property name="columnspan">3</property>
+              <property name="sticky">ew</property>
+              <property name="padx">4</property>
+              <property name="pady">5</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Frame" id="acciones" named="True">
+            <layout manager="grid">
+              <property name="row">4</property>
+              <property name="column">0</property>
+              <property name="columnspan">4</property>
+              <property name="sticky">e</property>
+              <property name="pady">8 0</property>
+            </layout>
+            <child>
+              <object class="ttk.Button" id="guardar" named="True">
+                <property name="text">Añadir a la tabla</property>
+                <property name="command" type="command" cbtype="simple">guardar_persona</property>
+                <layout manager="pack">
+                  <property name="side">left</property>
+                  <property name="padx">4</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Button" id="limpiar" named="True">
+                <property name="text">Limpiar formulario</property>
+                <property name="command" type="command" cbtype="simple">limpiar_formulario</property>
+                <layout manager="pack">
+                  <property name="side">left</property>
+                  <property name="padx">4</property>
+                </layout>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>

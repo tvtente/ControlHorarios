@@ -283,6 +283,8 @@
                 </child>
                 <child>
                   <object class="ttk.Entry" id="id_empleado" named="True">
+                    <bind sequence="&lt;FocusOut&gt;" handler="_actualizar_estado_empleado" add="" />
+                    <bind sequence="&lt;Return&gt;" handler="_actualizar_estado_empleado" add="" />
                     <property name="width">32</property>
                     <layout manager="grid">
                       <property name="column">1</property>
@@ -290,6 +292,18 @@
                       <property name="sticky">ew</property>
                     </layout>
                     <property name="style">Registro.TEntry</property>
+                    <child>
+                      <object class="ttk.Label" id="ayuda_id" named="True">
+                        <property name="text">EMP-000</property>
+                        <property name="style">AyudaID.TLabel</property>
+                        <bind sequence="&lt;Button-1&gt;" handler="_enfocar_id_empleado" add="" />
+                        <layout manager="place">
+                          <property name="x">12</property>
+                          <property name="rely">0.5</property>
+                          <property name="anchor">w</property>
+                        </layout>
+                      </object>
+                    </child>
                   </object>
                 </child>
               </object>
@@ -380,6 +394,7 @@
                 </child>
                 <child>
                   <object class="ttk.Combobox" id="departamento" named="True">
+                    <bind sequence="&lt;&lt;ComboboxSelected&gt;&gt;" handler="_cargar_horario_departamento" add="" />
                     <property name="state">readonly</property>
                     <property name="width">32</property>
                     <layout manager="grid">
@@ -602,6 +617,7 @@
                 </child>
                 <child>
                   <object class="ttk.Button" id="boton_inicio_prevista" named="True">
+                    <property name="command" type="command" cbtype="simple">registrar_entrada</property>
                     <property name="text">Entrar</property>
                     <property name="style">RegistroPaso.TButton</property>
                     <layout manager="grid">
@@ -654,6 +670,7 @@
                 </child>
                 <child>
                   <object class="ttk.Button" id="boton_fin_prevista" named="True">
+                    <property name="command" type="command" cbtype="simple">registrar_salida</property>
                     <property name="text">Terminar jornada</property>
                     <property name="style">RegistroPaso.TButton</property>
                     <layout manager="grid">
@@ -732,6 +749,7 @@
                 </child>
                 <child>
                   <object class="ttk.Button" id="boton_inicio_descanso_prevista" named="True">
+                    <property name="command" type="command" cbtype="simple">registrar_inicio_descanso</property>
                     <property name="text">Iniciar descanso</property>
                     <property name="style">RegistroPaso.TButton</property>
                     <layout manager="grid">
@@ -784,6 +802,7 @@
                 </child>
                 <child>
                   <object class="ttk.Button" id="boton_fin_descanso_prevista" named="True">
+                    <property name="command" type="command" cbtype="simple">registrar_fin_descanso</property>
                     <property name="text">Fin descanso</property>
                     <property name="style">RegistroPaso.TButton</property>
                     <layout manager="grid">

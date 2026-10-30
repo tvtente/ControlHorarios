@@ -1,0 +1,2 @@
+pygubu-designer==0.46.2
+ttkbootstrap==2.2.6
